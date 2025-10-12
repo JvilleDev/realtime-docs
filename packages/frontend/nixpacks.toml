@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs"]
+
+[phases.install]
+cmds = ["npm ci --only=production"]
+
+[phases.build]
+cmds = ["cd packages/frontend && npm run build"]
+
+[start]
+cmd = "cd packages/frontend && npm run preview"
+
+[variables]
+NODE_ENV = "production"
