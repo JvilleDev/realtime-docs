@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export interface User {
   id: number;
