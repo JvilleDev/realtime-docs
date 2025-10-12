@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./packages/backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/realtime-docs.db
+      - PORT=3001
+    restart: unless-stopped
+    networks:
+      - realtime-docs-network
+
+
+  frontend:
+    build: ./packages/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=http://backend:3001
+      - YJS_WEBSOCKET_URL=ws://yjs-websocket:3003/yjs
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - realtime-docs-network
+
+networks:
+  realtime-docs-network:
+    driver: bridge
+
+volumes:
+  data:

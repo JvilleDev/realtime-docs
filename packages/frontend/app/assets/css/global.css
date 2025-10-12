@@ -1,0 +1,35 @@
+/* Global styles for proper scrolling behavior */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#__nuxt {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure proper scrolling for editor content only */
+.editor-container {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.editor-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-container::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.editor-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.editor-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
