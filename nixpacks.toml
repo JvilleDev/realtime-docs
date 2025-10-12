@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs", "bun"]
+
+[phases.install]
+cmds = ["bun install"]
+
+[phases.build]
+cmds = ["echo 'Skipping build phase - using Bun runtime directly'"]
+
+[start]
+cmd = "cd packages/backend && bun run src/index.ts"
+
+[variables]
+NODE_ENV = "production"

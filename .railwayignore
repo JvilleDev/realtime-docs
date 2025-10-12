@@ -1,0 +1,56 @@
+# Railway ignore file
+
+# Frontend files (only deploying backend)
+packages/frontend/
+packages/yjs-websocket/
+
+# Development files
+dev.sh
+docker-compose.yml
+.env.example
+SECURITY.md
+
+# Documentation
+README.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Cache
+.cache/
+.nuxt/
+.output/
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Coverage
+coverage/
+
+# Build artifacts (not needed for Bun runtime)
+dist/
+build/

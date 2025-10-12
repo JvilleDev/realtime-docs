@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun",
-    "start": "bun run dist/index.js"
+    "build": "echo 'No build step needed for Bun runtime'",
+    "start": "bun run src/index.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
