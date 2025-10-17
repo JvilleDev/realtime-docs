@@ -155,123 +155,121 @@
     </Dialog>
 
     <!-- Edit Document Dialog -->
-    <Dialog 
-      v-model:visible="showEditDialog" 
-      header="Editar Documento" 
-      :modal="true"
-      :style="{ width: '450px' }"
-      :closable="true"
-    >
-      <form @submit.prevent="handleEditDocument" class="edit-form">
-        <div class="field">
-          <label for="editDocumentTitle" class="field-label">
-            <i class="pi pi-file-edit mr-2"></i>
-            Título del Documento
-          </label>
-          <InputText
-            id="editDocumentTitle"
-            v-model="editDocumentForm.title"
-            placeholder="Ingresa el título del documento"
-            :class="{ 'p-invalid': editErrors.title }"
-            required
-            autofocus
-          />
-          <small v-if="editErrors.title" class="p-error">{{ editErrors.title }}</small>
-        </div>
-        
-        <div class="field">
-          <label class="field-label">
-            <i class="pi pi-eye mr-2"></i>
-            Estado de Publicación
-          </label>
-          <div class="checkbox-field">
-            <Checkbox
-              v-model="editDocumentForm.is_published"
-              :binary="true"
-              inputId="published"
+    <Dialog v-model:open="showEditDialog">
+      <DialogContent class="sm:max-w-[450px]">
+        <DialogHeader>
+          <DialogTitle>Editar Documento</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="handleEditDocument" class="space-y-4">
+          <div class="space-y-2">
+            <label for="editDocumentTitle" class="text-sm font-medium flex items-center">
+              <Icon name="heroicons:document-text" class="w-4 h-4 mr-2" />
+              Título del Documento
+            </label>
+            <Input
+              id="editDocumentTitle"
+              v-model="editDocumentForm.title"
+              placeholder="Ingresa el título del documento"
+              :class="{ 'border-red-500': editErrors.title }"
+              required
+              autofocus
             />
-            <label for="published" class="checkbox-label">Documento público</label>
+            <small v-if="editErrors.title" class="text-red-500">{{ editErrors.title }}</small>
           </div>
-          <small class="field-help">Los documentos públicos pueden ser vistos por cualquier persona con el enlace</small>
-        </div>
+          
+          <div class="space-y-2">
+            <label class="text-sm font-medium flex items-center">
+              <Icon name="heroicons:eye" class="w-4 h-4 mr-2" />
+              Estado de Publicación
+            </label>
+            <div class="flex items-center space-x-2">
+              <Checkbox
+                v-model:checked="editDocumentForm.is_published"
+                id="published"
+              />
+              <label for="published" class="text-sm font-medium">Documento público</label>
+            </div>
+            <small class="text-xs text-gray-500">Los documentos públicos pueden ser vistos por cualquier persona con el enlace</small>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              @click="showEditDialog = false"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              :disabled="editingDocument"
+            >
+              <Icon name="heroicons:check" class="w-4 h-4 mr-2" />
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </form>
         
-        <div class="dialog-actions">
-          <Button
-            type="button"
-            label="Cancelar"
-            severity="secondary"
-            outlined
-            @click="showEditDialog = false"
-            class="mr-2"
-          />
-          <Button
-            type="submit"
-            label="Guardar Cambios"
-            icon="pi pi-save"
-            :loading="editingDocument"
-          />
-        </div>
-        
-        <InlineMessage 
-          v-if="editError" 
-          severity="error" 
-          :closable="false"
-          class="mt-3"
-        >
-          {{ editError }}
-        </InlineMessage>
-      </form>
+        <Alert v-if="editError" variant="destructive" class="mt-3">
+          <Icon name="heroicons:exclamation-triangle" class="w-4 h-4" />
+          <AlertDescription>{{ editError }}</AlertDescription>
+        </Alert>
+      </DialogContent>
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <Dialog 
-      v-model:visible="showDeleteConfirm" 
-      header="Confirmar Eliminación" 
-      :modal="true"
-      :style="{ width: '400px' }"
-      :closable="true"
-    >
-      <div class="delete-confirm-content">
-        <div class="delete-icon">
-          <i class="pi pi-exclamation-triangle text-6xl text-red-500"></i>
-        </div>
-        
-        <h3 class="delete-title">Eliminar Documento</h3>
-        
-        <p class="delete-message">
-          ¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer.
-        </p>
-        
-        <div class="document-info">
-          <div class="document-item">
-            <i class="pi pi-file-edit mr-2"></i>
-            {{ document?.title || 'Documento sin título' }}
+    <Dialog v-model:open="showDeleteConfirm">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Confirmar Eliminación</DialogTitle>
+        </DialogHeader>
+        <div class="text-center space-y-4">
+          <div>
+            <Icon name="heroicons:exclamation-triangle" class="w-16 h-16 text-red-500 mx-auto" />
           </div>
+          
+          <h3 class="text-xl font-semibold text-gray-900">Eliminar Documento</h3>
+          
+          <p class="text-gray-600">
+            ¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer.
+          </p>
+          
+          <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center justify-center text-gray-700">
+              <Icon name="heroicons:document-text" class="w-4 h-4 mr-2" />
+              {{ document?.title || 'Documento sin título' }}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              @click="showDeleteConfirm = false"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              :disabled="deletingDocument"
+              @click="handleDeleteDocument"
+            >
+              <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
+              Eliminar
+            </Button>
+          </DialogFooter>
         </div>
-        
-        <div class="dialog-actions">
-          <Button
-            label="Cancelar"
-            severity="secondary"
-            outlined
-            @click="showDeleteConfirm = false"
-            class="mr-2"
-          />
-          <Button
-            label="Eliminar"
-            icon="pi pi-trash"
-            severity="danger"
-            :loading="deletingDocument"
-            @click="handleDeleteDocument"
-          />
-        </div>
-      </div>
+      </DialogContent>
     </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import SocketIOEditor from '~/components/SocketIOEditor.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const route = useRoute()
 const router = useRouter()
@@ -586,293 +584,3 @@ onUnmounted(() => {
   flushPendingUpdates()
 })
 </script>
-
-<style scoped>
-.document-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.document-header {
-  background: white !important;
-  border-bottom: 1px solid #e5e7eb;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.document-title {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827 !important;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.save-status {
-  display: flex;
-  align-items: center;
-}
-
-.save-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.save-indicator.pending {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.save-indicator.saving {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.save-indicator.saved {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.save-indicator.error {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.save-indicator:not(.pending):not(.saving):not(.saved):not(.error) {
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.progress-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: 0 0 6px 6px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-  transition: width 0.05s ease;
-  border-radius: 0 0 6px 6px;
-}
-
-.save-text {
-  white-space: nowrap;
-}
-
-.document-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.document-content {
-  flex: 1;
-  overflow: hidden;
-}
-
-.share-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.share-link {
-  display: flex;
-  flex-direction: column;
-}
-
-.guest-viewing-badge {
-  font-size: 0.75rem;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .header-content {
-    padding: 8px 16px;
-  }
-  
-  .document-title {
-    font-size: 1.125rem;
-  }
-  
-  .header-left {
-    gap: 8px;
-  }
-  
-  .header-right {
-    gap: 12px;
-  }
-  
-  .save-indicator {
-    padding: 4px 8px;
-    font-size: 0.8rem;
-  }
-  
-  .save-text {
-    display: none; /* Hide text on mobile, show only icon */
-  }
-  
-  .document-actions {
-    gap: 4px;
-  }
-}
-
-@media (max-width: 640px) {
-  .header-content {
-    padding: 8px 12px;
-  }
-  
-  .document-title {
-    font-size: 1rem;
-  }
-  
-  .header-left {
-    gap: 6px;
-  }
-  
-  .header-right {
-    gap: 8px;
-  }
-  
-  .save-indicator {
-    padding: 3px 6px;
-    font-size: 0.75rem;
-  }
-  
-  .document-actions {
-    gap: 3px;
-  }
-  
-.responsive-dialog {
-  margin: 0 !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
-}
-
-/* Edit Form Styles */
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-}
-
-.field-label {
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-}
-
-.checkbox-field {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.checkbox-label {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.field-help {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-/* Delete Confirmation Styles */
-.delete-confirm-content {
-  text-align: center;
-}
-
-.delete-icon {
-  margin-bottom: 1rem;
-}
-
-.delete-title {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.delete-message {
-  margin: 0 0 1.5rem 0;
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.document-info {
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.document-item {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  color: #374151;
-}
-}
-</style>
