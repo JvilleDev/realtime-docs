@@ -1,41 +1,25 @@
-import Aura from '@primeuix/themes/aura'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-10-12",
   devtools: { enabled: process.env.NODE_ENV === 'development' },
-  modules: ['@primevue/nuxt-module', ['@nuxtjs/google-fonts', {families: {"Outfit": [400,600,700,800]}}], '@nuxt/icon'],
-  primevue: {
-    options: {
-      ripple: true,
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: false,
-          cssLayer: false
-        }
-      }
-    }
+  modules: ['shadcn-nuxt', ['@nuxtjs/google-fonts', {families: {"Outfit": [400,600,700,800]}}], '@nuxt/icon'],
+  shadcn: {
+    prefix: '',
+    componentDir: '@/components/ui'
   },
   runtimeConfig: {
     public: {
       backendUrl: process.env.BACKEND_URL || 'http://localhost:3001',
     }
   },
-  css: ["primeicons/primeicons.css", "~/assets/css/global.css"],
+  css: ['~/assets/css/tailwind.css', "~/assets/css/global.css"],
+  vite: {
+    plugins: [
+      tailwindcss(),
+    ],
+  },
   ssr: true,
-  
-  // Build optimizations
-  nitro: {
-    compressPublicAssets: true,
-    minify: true
-  },
-  
-  // Performance optimizations
-  experimental: {
-    payloadExtraction: false
-  },
-  
-  // Security headers
   routeRules: {
     '/': { prerender: true },
     '/login': { prerender: true },

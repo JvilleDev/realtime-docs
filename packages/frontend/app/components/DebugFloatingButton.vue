@@ -2,14 +2,16 @@
   <div class="debug-floating-button">
     <!-- Floating Debug Button -->
     <Button
-      icon="pi pi-bug"
-      severity="secondary"
-      size="small"
+      variant="secondary"
+      size="sm"
       class="debug-toggle-btn"
       @click="showDebugPanel = !showDebugPanel"
-      :badge="logs.length > 0 ? logs.length.toString() : undefined"
-      badge-severity="danger"
-    />
+    >
+      <Icon name="lucide:bug" class="w-4 h-4" />
+      <Badge v-if="logs.length > 0" variant="destructive" class="ml-2">
+        {{ logs.length }}
+      </Badge>
+    </Button>
     
     <!-- Debug Panel -->
     <div v-if="showDebugPanel" class="debug-panel">
@@ -17,33 +19,33 @@
         <h3>Registros de Depuración</h3>
         <div class="debug-controls">
           <Button
-            icon="pi pi-trash"
-            size="small"
-            severity="secondary"
+            variant="ghost"
+            size="sm"
             @click="handleClearLogs"
-            tooltip="Limpiar registros"
-          />
+          >
+            <Icon name="lucide:trash-2" class="w-4 h-4" />
+          </Button>
           <Button
-            icon="pi pi-copy"
-            size="small"
-            severity="secondary"
+            variant="ghost"
+            size="sm"
             @click="handleCopyLogs"
-            tooltip="Copiar registros"
-          />
+          >
+            <Icon name="lucide:copy" class="w-4 h-4" />
+          </Button>
           <Button
-            icon="pi pi-download"
-            size="small"
-            severity="secondary"
+            variant="ghost"
+            size="sm"
             @click="handleExportLogs"
-            tooltip="Exportar registros"
-          />
+          >
+            <Icon name="lucide:download" class="w-4 h-4" />
+          </Button>
           <Button
-            icon="pi pi-times"
-            size="small"
-            severity="secondary"
+            variant="ghost"
+            size="sm"
             @click="showDebugPanel = false"
-            tooltip="Cerrar"
-          />
+          >
+            <Icon name="lucide:x" class="w-4 h-4" />
+          </Button>
         </div>
       </div>
       
@@ -72,7 +74,7 @@
         </div>
         
         <div v-if="logs.length === 0" class="no-logs">
-          <i class="pi pi-info-circle"></i>
+          <Icon name="lucide:info" class="w-8 h-8" />
           <span>Aún no se han capturado registros</span>
         </div>
       </div>
@@ -82,10 +84,11 @@
 
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
-import { useToast } from 'primevue/usetoast'
+import { toast } from 'vue-sonner'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 const { logs, isCapturing, clearLogs, exportLogs, copyLogs } = useDebugLogs()
-const toast = useToast()
 
 const showDebugPanel = ref(false)
 const logsContainer = ref<HTMLElement>()
@@ -110,40 +113,20 @@ const handleCopyLogs = async () => {
   const result = await copyLogs()
   
   if (result.success) {
-    toast.add({
-      severity: 'success',
-      summary: 'Éxito',
-      detail: `Registros copiados al portapapeles (método ${result.method})`,
-      life: 3000
-    })
+    toast.success(`Registros copiados al portapapeles (método ${result.method})`)
   } else {
-    toast.add({
-      severity: 'warn',
-      summary: 'Error al Copiar',
-      detail: 'No se pudo copiar automáticamente. Revisa la consola para más detalles.',
-      life: 5000
-    })
+    toast.error('No se pudo copiar automáticamente. Revisa la consola para más detalles.')
   }
 }
 
 const handleClearLogs = () => {
   clearLogs()
-  toast.add({
-    severity: 'info',
-    summary: 'Registros Limpiados',
-    detail: 'Todos los registros de depuración han sido limpiados',
-    life: 2000
-  })
+  toast.info('Todos los registros de depuración han sido limpiados')
 }
 
 const handleExportLogs = () => {
   exportLogs()
-  toast.add({
-    severity: 'success',
-    summary: 'Exportación Iniciada',
-    detail: 'Los registros se están descargando como archivo de texto',
-    life: 3000
-  })
+  toast.success('Los registros se están descargando como archivo de texto')
 }
 </script>
 
@@ -160,7 +143,6 @@ const handleExportLogs = () => {
   height: 50px;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid var(--primary-color);
 }
 
 .debug-panel {

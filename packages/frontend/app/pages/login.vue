@@ -2,69 +2,72 @@
   <div class="login-page">
     <div class="login-container">
       <Card class="login-card">
-        <template #title>
-          <div class="login-title">
-            <h1>RealtimeDocs</h1>
-          </div>
-        </template>
+        <CardHeader>
+          <CardTitle class="login-title">
+            RealtimeDocs
+          </CardTitle>
+        </CardHeader>
         
-        <template #content>
+        <CardContent>
           <form @submit.prevent="handleLogin" class="login-form">
             <div class="field">
               <label for="username" class="field-label">Nombre de usuario</label>
-              <InputText
+              <Input
                 id="username"
                 v-model="form.username"
                 placeholder="Ingresa tu nombre de usuario"
-                :class="{ 'p-invalid': errors.username }"
+                :class="{ 'border-red-500': errors.username }"
                 required
               />
-              <small v-if="errors.username" class="p-error">{{ errors.username }}</small>
+              <small v-if="errors.username" class="text-red-500">{{ errors.username }}</small>
             </div>
             
             <div class="field">
               <label for="password" class="field-label">Contraseña</label>
-              <InputText
+              <Input
                 id="password"
                 v-model="form.password"
                 type="password"
                 placeholder="Ingresa tu contraseña"
-                :class="{ 'p-invalid': errors.password }"
+                :class="{ 'border-red-500': errors.password }"
                 required
               />
-              <small v-if="errors.password" class="p-error">{{ errors.password }}</small>
+              <small v-if="errors.password" class="text-red-500">{{ errors.password }}</small>
             </div>
             
             <Button
               type="submit"
-              label="Iniciar sesión"
-              icon="pi pi-sign-in"
-              :loading="loading"
+              :disabled="loading"
               class="w-full"
-            />
+            >
+              <Icon name="lucide:log-in" class="w-4 h-4 mr-2" />
+              Iniciar sesión
+            </Button>
             
             <div v-if="error" class="mt-3">
-              <div class="p-message p-message-error">
-                <span class="p-message-text">{{ error }}</span>
+              <div class="p-3 text-red-600 bg-red-50 border border-red-200 rounded-md">
+                <span>{{ error }}</span>
               </div>
             </div>
           </form>
-        </template>
+        </CardContent>
         
-        <template #footer>
+        <CardFooter>
           <div class="login-footer">
             <p class="text-sm text-gray-600">
               Contacta a tu administrador para acceso a la cuenta
             </p>
           </div>
-        </template>
+        </CardFooter>
       </Card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 definePageMeta({
   layout: false
@@ -150,9 +153,6 @@ onMounted(async () => {
 .login-title {
   text-align: center;
   margin-bottom: 1.5rem;
-}
-
-.login-title h1 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
@@ -199,7 +199,7 @@ onMounted(async () => {
     max-width: 100%;
   }
   
-  .login-title h1 {
+  .login-title {
     font-size: 1.25rem;
   }
   
@@ -231,7 +231,7 @@ onMounted(async () => {
     border: none;
   }
   
-  .login-title h1 {
+  .login-title {
     font-size: 1.125rem;
   }
   

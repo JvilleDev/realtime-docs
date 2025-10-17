@@ -1,515 +1,524 @@
 <template>
-  <div class="home-page">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 p-0">
     <!-- Header Section -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1 class="page-title">
-            <i class="pi pi-folder-open text-primary mr-3"></i>
+    <div class="bg-white border-b border-slate-200 py-8 mb-8 lg:py-6 md:py-6 sm:py-4">
+      <div class="max-w-7xl mx-auto px-6 lg:px-4 md:px-4 sm:px-3 flex justify-between items-center lg:flex-col lg:items-start lg:gap-6">
+        <div class="flex-1">
+          <h1 class="m-0 mb-2 text-4xl lg:text-3xl md:text-3xl sm:text-2xl font-bold text-slate-800 flex items-center">
+            <Icon name="heroicons:folder-open" class="text-primary mr-3" />
             {{ user ? 'Mis Documentos' : 'Documentos Públicos' }}
           </h1>
-          <p class="page-subtitle">
+          <p class="m-0 text-lg md:text-base font-normal text-slate-500">
             {{ user ? 'Gestiona y colabora en tus documentos' : 'Explora documentos compartidos públicamente' }}
           </p>
         </div>
         
-        <div class="header-right">
-          <div class="stats-container">
-            <div class="stat-item">
-              <span class="stat-number">{{ documents.length }}</span>
-              <span class="stat-label">Documentos</span>
+        <div class="flex items-center gap-8 lg:w-full lg:justify-between md:gap-4">
+          <div class="flex gap-6 md:gap-4">
+            <div class="text-center">
+              <span class="block text-3xl md:text-2xl font-bold text-blue-600 leading-none">{{ documents.length }}</span>
+              <span class="block text-sm text-slate-500 mt-1">Documentos</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-number">{{ publishedCount }}</span>
-              <span class="stat-label">Publicados</span>
+            <div class="text-center">
+              <span class="block text-3xl md:text-2xl font-bold text-blue-600 leading-none">{{ publishedCount }}</span>
+              <span class="block text-sm text-slate-500 mt-1">Publicados</span>
             </div>
           </div>
           
           <Button
             v-if="user"
-            icon="pi pi-plus"
-            label="Nuevo Documento"
             @click="createDocument"
-            :loading="creatingDocument"
-            class="create-btn"
-          />
+            :disabled="creatingDocument"
+            class="px-6 py-3 text-base font-semibold"
+          >
+            <Icon name="heroicons:plus" class="w-4 h-4 mr-2" />
+            Nuevo Documento
+          </Button>
         </div>
       </div>
     </div>
 
     <!-- Controls Section -->
-    <div class="controls-section">
-      <div class="controls-left">
-        <div class="search-container">
-          <Icon name="material-symbols:search" class="search-icon" />
-          <InputText
+    <div class="max-w-7xl mx-auto mb-8 px-6 lg:px-4 md:px-4 sm:px-3 flex justify-between items-center gap-4 lg:flex-col lg:items-stretch lg:gap-4">
+      <div class="flex-1">
+        <div class="relative max-w-md lg:max-w-none">
+          <Icon name="heroicons:magnifying-glass" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-lg" />
+          <Input
             v-model="searchQuery"
             placeholder="Buscar documentos..."
-            class="search-input"
+            class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white transition-all duration-200 focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
           />
         </div>
       </div>
       
-      <div class="controls-right">
-        <div class="sort-container">
-          <label class="sort-label">Ordenar por:</label>
-          <Dropdown
-            v-model="sortBy"
-            :options="sortOptions"
-            option-label="label"
-            option-value="value"
-            placeholder="Seleccionar"
-            class="sort-dropdown"
-          />
+      <div class="flex items-center gap-4 lg:justify-between">
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-slate-600">Ordenar por:</label>
+          <Select v-model="sortBy">
+            <SelectTrigger class="min-w-[180px]">
+              <SelectValue placeholder="Seleccionar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="option in sortOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
-        <div class="layout-toggle">
+        <div class="flex items-center">
           <Button
-            :icon="currentLayout === 'grid' ? 'pi pi-th-large' : 'pi pi-list'"
-            :severity="currentLayout === 'grid' ? 'primary' : 'secondary'"
+            :variant="currentLayout === 'grid' ? 'default' : 'outline'"
             @click="toggleLayout"
-            v-tooltip="currentLayout === 'grid' ? 'Vista de lista' : 'Vista de cuadrícula'"
-            class="layout-btn"
-          />
+            class="w-10 h-10 rounded-lg"
+          >
+            <Icon :name="currentLayout === 'grid' ? 'heroicons:squares-2x2' : 'heroicons:list-bullet'" class="w-4 h-4" />
+          </Button>
         </div>
         
-        <div v-if="user && selectedDocuments.length > 0" class="bulk-actions">
+        <div v-if="user && selectedDocuments.length > 0" class="flex items-center gap-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
           <Button
-            icon="pi pi-trash"
-            label="Eliminar Seleccionados"
-            severity="danger"
-            outlined
+            variant="destructive"
             @click="showDeleteConfirm = true"
-            class="bulk-delete-btn"
-          />
-          <span class="selection-count">{{ selectedDocuments.length }} seleccionados</span>
+            class="text-sm"
+          >
+            <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
+            Eliminar Seleccionados
+          </Button>
+          <span class="text-sm text-red-600 font-medium">{{ selectedDocuments.length }} seleccionados</span>
         </div>
       </div>
     </div>
     
     <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <div class="loading-content">
-        <ProgressSpinner 
-          style="width: 60px; height: 60px" 
-          strokeWidth="3"
-          animationDuration="1s"
-        />
-        <p class="loading-text">Cargando documentos...</p>
+    <div v-if="loading" class="flex justify-center items-center min-h-[400px]">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
+        <p class="mt-4 text-lg text-slate-500 font-medium">Cargando documentos...</p>
       </div>
     </div>
     
     <!-- Empty State -->
-    <div v-else-if="filteredDocuments.length === 0" class="empty-state">
-      <div class="empty-content">
-        <div class="empty-icon">
-          <i class="pi pi-file-edit text-8xl text-surface-300"></i>
+    <div v-else-if="filteredDocuments.length === 0" class="flex justify-center items-center min-h-[500px]">
+      <div class="text-center max-w-md">
+        <div class="mb-6">
+          <Icon name="heroicons:document-text" class="text-8xl text-gray-300" />
         </div>
-        <h3 class="empty-title">
+        <h3 class="m-0 mb-4 text-2xl font-semibold text-slate-800">
           {{ searchQuery ? 'No se encontraron documentos' : (user ? 'Aún no tienes documentos' : 'No hay documentos públicos') }}
         </h3>
-        <p class="empty-subtitle">
+        <p class="m-0 mb-8 text-base text-slate-500 leading-relaxed">
           {{ searchQuery ? 'Intenta con otros términos de búsqueda' : (user ? '¡Crea tu primer documento para comenzar!' : 'Vuelve más tarde para ver contenido publicado.') }}
         </p>
-        <div class="empty-actions">
+        <div class="flex justify-center gap-4">
           <Button
             v-if="user && !searchQuery"
-            icon="pi pi-plus"
-            label="Crear Documento"
             @click="createDocument"
-            class="empty-create-btn"
-          />
+            class="px-8 py-3 text-base font-semibold"
+          >
+            <Icon name="heroicons:plus" class="w-4 h-4 mr-2" />
+            Crear Documento
+          </Button>
           <Button
             v-if="searchQuery"
-            icon="pi pi-times"
-            label="Limpiar búsqueda"
+            variant="outline"
             @click="searchQuery = ''"
-            severity="secondary"
-            outlined
-          />
+          >
+            <Icon name="heroicons:x-mark" class="w-4 h-4 mr-2" />
+            Limpiar búsqueda
+          </Button>
         </div>
       </div>
     </div>
     
     <!-- Documents Content -->
-    <div v-else class="documents-content">
+    <div v-else class="max-w-7xl mx-auto px-6 lg:px-4 md:px-4 sm:px-3">
       <!-- Grid Layout -->
-      <div v-if="currentLayout === 'grid'" class="documents-grid">
+      <div v-if="currentLayout === 'grid'" class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:grid-cols-1 gap-6 md:gap-4">
         <div 
           v-for="document in filteredDocuments" 
           :key="document.id"
-          class="document-card-grid"
-          :class="{ 'selected': selectedDocuments.includes(document.id) }"
+          class="bg-white rounded-2xl border border-slate-200 overflow-hidden cursor-pointer transition-all duration-300 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:border-blue-500"
+          :class="{ 'border-blue-500 bg-blue-50': selectedDocuments.includes(document.id) }"
         >
-          <div class="card-header">
-            <div class="card-selection">
+          <div class="p-6 pb-4 lg:p-4 lg:pb-3 md:p-4 md:pb-3 flex justify-between items-start relative">
+            <div class="absolute top-4 left-4 lg:top-3 lg:left-3 md:top-3 md:left-3 z-10">
               <Checkbox
                 v-if="user"
-                v-model="selectedDocuments"
-                :value="document.id"
+                :checked="selectedDocuments.includes(document.id)"
+                @update:checked="toggleDocumentSelection(document.id)"
                 @click.stop
-                class="document-checkbox"
+                class="bg-white rounded shadow-sm"
               />
             </div>
-            <div class="card-icon" @click="openDocument(document.id)">
-              <i class="pi pi-file-edit"></i>
+            <div class="w-12 h-12 lg:w-10 lg:h-10 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white text-xl lg:text-lg md:text-lg cursor-pointer" @click="openDocument(document.id)">
+              <Icon name="heroicons:document-text" />
             </div>
-            <div class="card-status">
-              <Tag 
+            <div class="mt-1">
+              <Badge 
                 v-if="document.is_published"
-                value="Publicado"
-                severity="success"
-                icon="pi pi-eye"
-                class="status-tag"
-              />
-              <Tag 
+                variant="default"
+                class="text-xs font-semibold"
+              >
+                <Icon name="heroicons:eye" class="w-3 h-3 mr-1" />
+                Publicado
+              </Badge>
+              <Badge 
                 v-else
-                value="Privado"
-                severity="secondary"
-                icon="pi pi-lock"
-                class="status-tag"
-              />
+                variant="secondary"
+                class="text-xs font-semibold"
+              >
+                <Icon name="heroicons:lock-closed" class="w-3 h-3 mr-1" />
+                Privado
+              </Badge>
             </div>
           </div>
           
-          <div class="card-content">
-            <h3 class="card-title">{{ document.title }}</h3>
-            <p class="card-description">{{ document.title }}</p>
+          <div class="px-6 pb-4 lg:px-4 lg:pb-3 md:px-4 md:pb-3">
+            <h3 class="m-0 mb-2 text-lg lg:text-base md:text-base font-semibold text-slate-800 leading-snug">{{ document.title }}</h3>
+            <p class="m-0 text-sm text-slate-500 leading-relaxed">{{ document.title }}</p>
           </div>
           
-          <div class="card-footer">
-            <div class="card-meta">
-              <div class="owner-info">
-                <Avatar 
-                  :label="document.owner_name.charAt(0)" 
-                  :style="{ backgroundColor: document.owner_color }"
-                  size="small"
-                />
-                <span class="owner-name">{{ document.owner_name }}</span>
+          <div class="px-6 pb-6 pt-4 lg:px-4 lg:pb-4 lg:pt-3 md:px-4 md:pb-4 md:pt-3 border-t border-slate-100">
+            <div class="mb-4">
+              <div class="flex items-center gap-2 mb-2">
+                <Avatar size="small">
+                  <AvatarFallback :style="{ backgroundColor: document.owner_color }">
+                    {{ document.owner_name.charAt(0) }}
+                  </AvatarFallback>
+                </Avatar>
+                <span class="text-sm font-medium text-slate-600">{{ document.owner_name }}</span>
               </div>
               
-              <div class="card-date">
-                <i class="pi pi-clock"></i>
+              <div class="flex items-center gap-1 text-xs text-slate-400">
+                <Icon name="heroicons:clock" class="w-3 h-3" />
                 <span>{{ formatDate(document.updated_at) }}</span>
               </div>
             </div>
             
-            <div class="card-actions">
+            <div class="flex gap-2">
               <Button
-                icon="pi pi-external-link"
+                variant="ghost"
+                size="sm"
                 @click.stop="openDocument(document.id)"
-                v-tooltip="'Abrir documento'"
-                class="action-btn"
-              />
+                class="flex-1 p-2 rounded-lg"
+              >
+                <Icon name="heroicons:arrow-top-right-on-square" class="w-4 h-4" />
+              </Button>
               
               <Button
                 v-if="user"
-                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
                 @click.stop="editDocument(document)"
-                v-tooltip="'Editar documento'"
-                severity="secondary"
-                class="action-btn"
-              />
+                class="flex-1 p-2 rounded-lg"
+              >
+                <Icon name="heroicons:pencil" class="w-4 h-4" />
+              </Button>
               
               <Button
                 v-if="user && document.is_published"
-                icon="pi pi-send"
+                variant="ghost"
+                size="sm"
                 @click.stop="shareDocument(document.id)"
-                v-tooltip="'Compartir documento'"
-                severity="secondary"
-                class="action-btn"
-              />
+                class="flex-1 p-2 rounded-lg"
+              >
+                <Icon name="heroicons:share" class="w-4 h-4" />
+              </Button>
               
               <Button
                 v-if="user"
-                icon="pi pi-trash"
+                variant="ghost"
+                size="sm"
                 @click.stop="deleteDocument(document)"
-                v-tooltip="'Eliminar documento'"
-                severity="danger"
-                class="action-btn"
-              />
+                class="flex-1 p-2 rounded-lg"
+              >
+                <Icon name="heroicons:trash" class="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
       </div>
       
       <!-- List Layout -->
-      <div v-else class="documents-list">
+      <div v-else class="flex flex-col gap-3">
         <div 
           v-for="document in filteredDocuments" 
           :key="document.id"
-          class="document-card-list"
-          :class="{ 'selected': selectedDocuments.includes(document.id) }"
+          class="bg-white rounded-xl border border-slate-200 px-6 py-4 cursor-pointer transition-all duration-200 flex items-center gap-4 hover:border-blue-500 hover:shadow-md"
+          :class="{ 'border-blue-500 bg-blue-50': selectedDocuments.includes(document.id) }"
         >
-          <div class="list-selection">
+          <div class="flex-shrink-0 mr-2">
             <Checkbox
               v-if="user"
-              v-model="selectedDocuments"
-              :value="document.id"
+              :checked="selectedDocuments.includes(document.id)"
+              @update:checked="toggleDocumentSelection(document.id)"
               @click.stop
-              class="document-checkbox"
             />
           </div>
-          <div class="list-icon" @click="openDocument(document.id)">
-            <i class="pi pi-file-edit"></i>
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-base flex-shrink-0 cursor-pointer" @click="openDocument(document.id)">
+            <Icon name="heroicons:document-text" />
           </div>
           
-          <div class="list-content">
-            <div class="list-header">
-              <h3 class="list-title">{{ document.title }}</h3>
-              <div class="list-status">
-                <Tag 
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-center mb-2 lg:flex-col lg:items-start lg:gap-2">
+              <h3 class="m-0 text-base lg:text-sm md:text-sm font-semibold text-slate-800 leading-snug">{{ document.title }}</h3>
+              <div>
+                <Badge 
                   v-if="document.is_published"
-                  value="Publicado"
-                  severity="success"
-                  icon="pi pi-eye"
-                />
-                <Tag 
+                  variant="default"
+                >
+                  <Icon name="heroicons:eye" class="w-3 h-3 mr-1" />
+                  Publicado
+                </Badge>
+                <Badge 
                   v-else
-                  value="Privado"
-                  severity="secondary"
-                  icon="pi pi-lock"
-                />
+                  variant="secondary"
+                >
+                  <Icon name="heroicons:lock-closed" class="w-3 h-3 mr-1" />
+                  Privado
+                </Badge>
               </div>
             </div>
             
-            <div class="list-meta">
-              <div class="list-owner">
-                <Avatar 
-                  :label="document.owner_name.charAt(0)" 
-                  :style="{ backgroundColor: document.owner_color }"
-                  size="small"
-                />
+            <div class="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-2">
+              <div class="flex items-center gap-2 text-sm text-slate-600">
+                <Avatar size="small">
+                  <AvatarFallback :style="{ backgroundColor: document.owner_color }">
+                    {{ document.owner_name.charAt(0) }}
+                  </AvatarFallback>
+                </Avatar>
                 <span>{{ document.owner_name }}</span>
               </div>
               
-              <div class="list-date">
-                <i class="pi pi-clock"></i>
+              <div class="flex items-center gap-1 text-xs text-slate-400">
+                <Icon name="heroicons:clock" class="w-3 h-3" />
                 <span>{{ formatDate(document.updated_at) }}</span>
               </div>
             </div>
           </div>
           
-          <div class="list-actions">
+          <div class="flex gap-2 flex-shrink-0">
             <Button
-              icon="pi pi-external-link"
+              variant="ghost"
+              size="sm"
               @click.stop="openDocument(document.id)"
-              v-tooltip="'Abrir documento'"
-              size="small"
-            />
+            >
+              <Icon name="heroicons:arrow-top-right-on-square" class="w-4 h-4" />
+            </Button>
             
             <Button
               v-if="user"
-              icon="pi pi-pencil"
+              variant="ghost"
+              size="sm"
               @click.stop="editDocument(document)"
-              v-tooltip="'Editar documento'"
-              severity="secondary"
-              size="small"
-            />
+            >
+              <Icon name="heroicons:pencil" class="w-4 h-4" />
+            </Button>
             
             <Button
               v-if="user && document.is_published"
-              icon="pi pi-send"
+              variant="ghost"
+              size="sm"
               @click.stop="shareDocument(document.id)"
-              v-tooltip="'Compartir documento'"
-              severity="secondary"
-              size="small"
-            />
+            >
+              <Icon name="heroicons:share" class="w-4 h-4" />
+            </Button>
             
             <Button
               v-if="user"
-              icon="pi pi-trash"
+              variant="ghost"
+              size="sm"
               @click.stop="deleteDocument(document)"
-              v-tooltip="'Eliminar documento'"
-              severity="danger"
-              size="small"
-            />
+            >
+              <Icon name="heroicons:trash" class="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Create Document Dialog -->
-    <Dialog 
-      v-model:visible="showCreateDialog" 
-      header="Crear Nuevo Documento" 
-      :modal="true"
-      :style="{ width: '450px' }"
-      :closable="true"
-    >
-      <form @submit.prevent="handleCreateDocument" class="create-form">
-        <div class="field">
-          <label for="documentTitle" class="field-label">
-            <i class="pi pi-file-edit mr-2"></i>
-            Título del Documento
-          </label>
-          <InputText
-            id="documentTitle"
-            v-model="newDocument.title"
-            placeholder="Ingresa el título del documento"
-            :class="{ 'p-invalid': createErrors.title }"
-            required
-            autofocus
-          />
-          <small v-if="createErrors.title" class="p-error">{{ createErrors.title }}</small>
-        </div>
+    <Dialog v-model:open="showCreateDialog">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Crear Nuevo Documento</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="handleCreateDocument" class="flex flex-col gap-6">
+          <div class="flex flex-col">
+            <label for="documentTitle" class="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+              <Icon name="heroicons:document-text" class="w-4 h-4 mr-2" />
+              Título del Documento
+            </label>
+            <Input
+              id="documentTitle"
+              v-model="newDocument.title"
+              placeholder="Ingresa el título del documento"
+              :class="{ 'border-red-500': createErrors.title }"
+              required
+              autofocus
+            />
+            <small v-if="createErrors.title" class="text-red-500">{{ createErrors.title }}</small>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              @click="showCreateDialog = false"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              :disabled="creatingDocument"
+            >
+              Crear Documento
+            </Button>
+          </DialogFooter>
+        </form>
         
-        <div class="dialog-actions">
-          <Button
-            type="button"
-            label="Cancelar"
-            severity="secondary"
-            outlined
-            @click="showCreateDialog = false"
-            class="mr-2"
-          />
-          <Button
-            type="submit"
-            label="Crear Documento"
-            icon="pi pi-plus"
-            :loading="creatingDocument"
-          />
-        </div>
-        
-        <InlineMessage 
-          v-if="createError" 
-          severity="error" 
-          :closable="false"
-          class="mt-3"
-        >
-          {{ createError }}
-        </InlineMessage>
-      </form>
+        <Alert v-if="createError" variant="destructive" class="mt-3">
+          <AlertDescription>{{ createError }}</AlertDescription>
+        </Alert>
+      </DialogContent>
     </Dialog>
 
     <!-- Edit Document Dialog -->
-    <Dialog 
-      v-model:visible="showEditDialog" 
-      header="Editar Documento" 
-      :modal="true"
-      :style="{ width: '450px' }"
-      :closable="true"
-    >
-      <form @submit.prevent="handleEditDocument" class="edit-form">
-        <div class="field">
-          <label for="editDocumentTitle" class="field-label">
-            <i class="pi pi-file-edit mr-2"></i>
-            Título del Documento
-          </label>
-          <InputText
-            id="editDocumentTitle"
-            v-model="editDocumentForm.title"
-            placeholder="Ingresa el título del documento"
-            :class="{ 'p-invalid': editErrors.title }"
-            required
-            autofocus
-          />
-          <small v-if="editErrors.title" class="p-error">{{ editErrors.title }}</small>
-        </div>
-        
-        <div class="field">
-          <label class="field-label">
-            <i class="pi pi-eye mr-2"></i>
-            Estado de Publicación
-          </label>
-          <div class="checkbox-field">
-            <Checkbox
-              v-model="editDocumentForm.is_published"
-              :binary="true"
-              inputId="published"
+    <Dialog v-model:open="showEditDialog">
+      <DialogContent class="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Editar Documento</DialogTitle>
+        </DialogHeader>
+        <form @submit.prevent="handleEditDocument" class="flex flex-col gap-6">
+          <div class="flex flex-col">
+            <label for="editDocumentTitle" class="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+              <Icon name="heroicons:document-text" class="w-4 h-4 mr-2" />
+              Título del Documento
+            </label>
+            <Input
+              id="editDocumentTitle"
+              v-model="editDocumentForm.title"
+              placeholder="Ingresa el título del documento"
+              :class="{ 'border-red-500': editErrors.title }"
+              required
+              autofocus
             />
-            <label for="published" class="checkbox-label">Documento público</label>
+            <small v-if="editErrors.title" class="text-red-500">{{ editErrors.title }}</small>
           </div>
-          <small class="field-help">Los documentos públicos pueden ser vistos por cualquier persona con el enlace</small>
-        </div>
+          
+          <div class="flex flex-col">
+            <label class="font-semibold text-gray-700 mb-2 flex items-center text-sm">
+              <Icon name="heroicons:eye" class="w-4 h-4 mr-2" />
+              Estado de Publicación
+            </label>
+            <div class="flex items-center gap-2 mb-2">
+              <Checkbox
+                v-model:checked="editDocumentForm.is_published"
+                id="published"
+              />
+              <label for="published" class="text-sm text-gray-700 font-medium">Documento público</label>
+            </div>
+            <small class="text-xs text-gray-500 mt-1">Los documentos públicos pueden ser vistos por cualquier persona con el enlace</small>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              @click="showEditDialog = false"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              :disabled="editingDocument"
+            >
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </form>
         
-        <div class="dialog-actions">
-          <Button
-            type="button"
-            label="Cancelar"
-            severity="secondary"
-            outlined
-            @click="showEditDialog = false"
-            class="mr-2"
-          />
-          <Button
-            type="submit"
-            label="Guardar Cambios"
-            icon="pi pi-save"
-            :loading="editingDocument"
-          />
-        </div>
-        
-        <InlineMessage 
-          v-if="editError" 
-          severity="error" 
-          :closable="false"
-          class="mt-3"
-        >
-          {{ editError }}
-        </InlineMessage>
-      </form>
+        <Alert v-if="editError" variant="destructive" class="mt-3">
+          <AlertDescription>{{ editError }}</AlertDescription>
+        </Alert>
+      </DialogContent>
     </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <Dialog 
-      v-model:visible="showDeleteConfirm" 
-      header="Confirmar Eliminación" 
-      :modal="true"
-      :style="{ width: '400px' }"
-      :closable="true"
-    >
-      <div class="delete-confirm-content">
-        <div class="delete-icon">
-          <i class="pi pi-exclamation-triangle text-6xl text-red-500"></i>
-        </div>
-        
-        <h3 class="delete-title">
-          {{ selectedDocuments.length > 1 ? 'Eliminar Documentos' : 'Eliminar Documento' }}
-        </h3>
-        
-        <p class="delete-message">
-          {{ selectedDocuments.length > 1 
-            ? `¿Estás seguro de que quieres eliminar ${selectedDocuments.length} documentos? Esta acción no se puede deshacer.`
-            : '¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer.'
-          }}
-        </p>
-        
-        <div v-if="selectedDocuments.length > 1" class="documents-list">
-          <div v-for="docId in selectedDocuments" :key="docId" class="document-item">
-            <i class="pi pi-file-edit mr-2"></i>
-            {{ documents.find(d => d.id === docId)?.title || 'Documento' }}
+    <Dialog v-model:open="showDeleteConfirm">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Confirmar Eliminación</DialogTitle>
+        </DialogHeader>
+        <div class="text-center">
+          <div class="mb-4">
+            <Icon name="heroicons:exclamation-triangle" class="w-16 h-16 text-red-500" />
           </div>
+          
+          <h3 class="m-0 mb-4 text-xl font-semibold text-slate-800">
+            {{ selectedDocuments.length > 1 ? 'Eliminar Documentos' : 'Eliminar Documento' }}
+          </h3>
+          
+          <p class="m-0 mb-6 text-slate-500 leading-relaxed">
+            {{ selectedDocuments.length > 1 
+              ? `¿Estás seguro de que quieres eliminar ${selectedDocuments.length} documentos? Esta acción no se puede deshacer.`
+              : '¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer.'
+            }}
+          </p>
+          
+          <div v-if="selectedDocuments.length > 1" class="bg-slate-50 rounded-lg p-4 mb-6 max-h-48 overflow-y-auto">
+            <div v-for="docId in selectedDocuments" :key="docId" class="flex items-center py-2 text-sm text-gray-700 border-b border-slate-200 last:border-b-0">
+              <Icon name="heroicons:document-text" class="w-4 h-4 mr-2" />
+              {{ documents.find((d: Document) => d.id === docId)?.title || 'Documento' }}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              @click="showDeleteConfirm = false"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              :disabled="deletingDocuments"
+              @click="handleDeleteDocuments"
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
         </div>
-        
-        <div class="dialog-actions">
-          <Button
-            label="Cancelar"
-            severity="secondary"
-            outlined
-            @click="showDeleteConfirm = false"
-            class="mr-2"
-          />
-          <Button
-            label="Eliminar"
-            icon="pi pi-trash"
-            severity="danger"
-            :loading="deletingDocuments"
-            @click="handleDeleteDocuments"
-          />
-        </div>
-      </div>
+      </DialogContent>
     </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+
+interface Document {
+  id: number
+  title: string
+  owner_name: string
+  owner_color: string
+  is_published: boolean
+  updated_at: string
+}
 
 const { user, logout, token } = useAuth()
 const router = useRouter()
 
-const documents = ref([])
+const documents = ref<Document[]>([])
 const loading = ref(true)
 const creatingDocument = ref(false)
 const editingDocument = ref(false)
@@ -522,14 +531,14 @@ const showDeleteConfirm = ref(false)
 const searchQuery = ref('')
 const sortBy = ref('updated_at')
 const currentLayout = ref('grid')
-const selectedDocuments = ref([])
+const selectedDocuments = ref<number[]>([])
 
 const newDocument = reactive({
   title: ''
 })
 
 const editDocumentForm = reactive({
-  id: null,
+  id: null as number | null,
   title: '',
   is_published: false
 })
@@ -581,7 +590,7 @@ const filteredDocuments = computed(() => {
       case 'owner_name':
         return a.owner_name.localeCompare(b.owner_name)
       case 'is_published':
-        return b.is_published - a.is_published
+        return Number(b.is_published) - Number(a.is_published)
       case 'updated_at':
       default:
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
@@ -596,6 +605,15 @@ const toggleLayout = () => {
   currentLayout.value = currentLayout.value === 'grid' ? 'list' : 'grid'
 }
 
+const toggleDocumentSelection = (documentId: number) => {
+  const index = selectedDocuments.value.indexOf(documentId)
+  if (index > -1) {
+    selectedDocuments.value.splice(index, 1)
+  } else {
+    selectedDocuments.value.push(documentId)
+  }
+}
+
 onMounted(async () => {
   await loadDocuments()
 })
@@ -608,14 +626,14 @@ const loadDocuments = async () => {
     
     if (user.value) {
       // Load user's documents
-      documents.value = await $fetch(`${config.public.backendUrl}/api/documents`, {
+      documents.value = await $fetch<Document[]>(`${config.public.backendUrl}/api/documents`, {
         headers: {
           Authorization: `Bearer ${token.value}`
         }
       })
     } else {
       // Load published documents for guests
-      documents.value = await $fetch(`${config.public.backendUrl}/api/documents/published`)
+      documents.value = await $fetch<Document[]>(`${config.public.backendUrl}/api/documents/published`)
     }
   } catch (error) {
     console.error('Error loading documents:', error)
@@ -682,7 +700,7 @@ const shareDocument = (documentId: number) => {
   navigator.clipboard.writeText(shareUrl)
 }
 
-const editDocument = (document: any) => {
+const editDocument = (document: Document) => {
   editDocumentForm.id = document.id
   editDocumentForm.title = document.title
   editDocumentForm.is_published = document.is_published
@@ -717,7 +735,7 @@ const handleEditDocument = async () => {
     
     // Update local document
     const docIndex = documents.value.findIndex(d => d.id === editDocumentForm.id)
-    if (docIndex !== -1) {
+    if (docIndex !== -1 && editDocumentForm.id !== null && documents.value[docIndex]) {
       documents.value[docIndex].title = editDocumentForm.title
       documents.value[docIndex].is_published = editDocumentForm.is_published
     }
@@ -731,7 +749,7 @@ const handleEditDocument = async () => {
   }
 }
 
-const deleteDocument = (document: any) => {
+const deleteDocument = (document: Document) => {
   selectedDocuments.value = [document.id]
   showDeleteConfirm.value = true
 }
@@ -770,718 +788,3 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
 </script>
-
-<style scoped>
-.home-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 0;
-}
-
-/* Header Section */
-.page-header {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 2rem 0;
-  margin-bottom: 2rem;
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left {
-  flex: 1;
-}
-
-.page-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-}
-
-.page-subtitle {
-  margin: 0;
-  font-size: 1.125rem;
-  color: #64748b;
-  font-weight: 400;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.stats-container {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-number {
-  display: block;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #3b82f6;
-  line-height: 1;
-}
-
-.stat-label {
-  display: block;
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-
-.create-btn {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* Controls Section */
-.controls-section {
-  max-width: 1200px;
-  margin: 0 auto 2rem auto;
-  padding: 0 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.controls-left {
-  flex: 1;
-}
-
-.search-container {
-  position: relative;
-  max-width: 400px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  font-size: 1.125rem;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1rem;
-  background: white;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.controls-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.sort-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sort-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-}
-
-.sort-dropdown {
-  min-width: 180px;
-}
-
-.layout-toggle {
-  display: flex;
-  align-items: center;
-}
-
-.layout-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-}
-
-.bulk-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-}
-
-.bulk-delete-btn {
-  font-size: 0.875rem;
-}
-
-.selection-count {
-  font-size: 0.875rem;
-  color: #dc2626;
-  font-weight: 500;
-}
-
-/* Loading State */
-.loading-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.loading-content {
-  text-align: center;
-}
-
-.loading-text {
-  margin-top: 1rem;
-  font-size: 1.125rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* Empty State */
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 500px;
-}
-
-.empty-content {
-  text-align: center;
-  max-width: 500px;
-}
-
-.empty-icon {
-  margin-bottom: 1.5rem;
-}
-
-.empty-title {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.empty-subtitle {
-  margin: 0 0 2rem 0;
-  font-size: 1rem;
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.empty-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.empty-create-btn {
-  padding: 0.75rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* Documents Content */
-.documents-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-/* Grid Layout */
-.documents-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-}
-
-.document-card-grid {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.document-card-grid:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border-color: #3b82f6;
-}
-
-.document-card-grid.selected {
-  border-color: #3b82f6;
-  background: #f0f9ff;
-}
-
-.document-card-list.selected {
-  border-color: #3b82f6;
-  background: #f0f9ff;
-}
-
-.card-header {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.card-selection {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 10;
-}
-
-.document-checkbox {
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.list-selection {
-  flex-shrink: 0;
-  margin-right: 0.5rem;
-}
-
-.card-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.25rem;
-}
-
-.card-status {
-  margin-top: 0.25rem;
-}
-
-.status-tag {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.card-content {
-  padding: 0 1.5rem 1rem 1.5rem;
-}
-
-.card-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
-}
-
-.card-description {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-.card-footer {
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  border-top: 1px solid #f1f5f9;
-}
-
-.card-meta {
-  margin-bottom: 1rem;
-}
-
-.owner-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.owner-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-}
-
-.card-date {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-btn {
-  flex: 1;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-/* List Layout */
-.documents-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.document-card-list {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.document-card-list:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.list-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.list-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.list-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
-}
-
-.list-meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.list-owner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #475569;
-}
-
-.list-date {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.list-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-/* Dialog Styles */
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-}
-
-.field-label {
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-}
-
-.dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-/* Edit Form Styles */
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.checkbox-field {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.checkbox-label {
-  font-size: 0.875rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.field-help {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.25rem;
-}
-
-/* Delete Confirmation Styles */
-.delete-confirm-content {
-  text-align: center;
-}
-
-.delete-icon {
-  margin-bottom: 1rem;
-}
-
-.delete-title {
-  margin: 0 0 1rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.delete-message {
-  margin: 0 0 1.5rem 0;
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.documents-list {
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.document-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
-  color: #374151;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.document-item:last-child {
-  border-bottom: none;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .header-content {
-    padding: 0 1rem;
-  }
-  
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .controls-section {
-    padding: 0 1rem;
-  }
-  
-  .documents-content {
-    padding: 0 1rem;
-  }
-  
-  .documents-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .page-header {
-    padding: 1.5rem 0;
-  }
-  
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
-  }
-  
-  .page-title {
-    font-size: 1.75rem;
-  }
-  
-  .page-subtitle {
-    font-size: 1rem;
-  }
-  
-  .header-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .stats-container {
-    gap: 1rem;
-  }
-  
-  .stat-number {
-    font-size: 1.5rem;
-  }
-  
-  .controls-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  
-  .controls-right {
-    justify-content: space-between;
-  }
-  
-  .search-container {
-    max-width: none;
-  }
-  
-  .documents-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .document-card-list {
-    padding: 0.75rem 1rem;
-  }
-  
-  .list-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .list-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .page-header {
-    padding: 1rem 0;
-  }
-  
-  .header-content {
-    padding: 0 0.75rem;
-  }
-  
-  .page-title {
-    font-size: 1.5rem;
-  }
-  
-  .controls-section {
-    padding: 0 0.75rem;
-  }
-  
-  .documents-content {
-    padding: 0 0.75rem;
-  }
-  
-  .card-header {
-    padding: 1rem 1rem 0.75rem 1rem;
-  }
-  
-  .card-content {
-    padding: 0 1rem 0.75rem 1rem;
-  }
-  
-  .card-footer {
-    padding: 0.75rem 1rem 1rem 1rem;
-  }
-  
-  .card-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-  
-  .card-title {
-    font-size: 1rem;
-  }
-  
-  .list-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.875rem;
-  }
-  
-  .list-title {
-    font-size: 0.875rem;
-  }
-}
-</style>

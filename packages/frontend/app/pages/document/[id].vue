@@ -1,36 +1,39 @@
 <template>
-  <div class="document-page">
+  <div class="min-h-screen bg-white">
     <!-- Header -->
-    <div class="document-header">
-      <div class="header-content">
-        <div class="header-left">
+    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
           <Button 
-            icon="pi pi-arrow-left" 
-            text 
+            variant="ghost"
+            size="sm"
             @click="$router.push('/')"
-            class="back-button"
-          />
-          <h1 class="document-title">{{ document?.title || 'Documento sin título' }}</h1>
+            class="p-2"
+          >
+            <Icon name="heroicons:arrow-left" class="w-4 h-4" />
+          </Button>
+          <h1 class="text-xl font-semibold text-gray-900">{{ document?.title || 'Documento sin título' }}</h1>
         </div>
         
-        <div class="header-right">
+        <div class="flex items-center gap-4">
           <!-- Save Status Indicator -->
-          <div v-if="!isGuest" class="save-status">
+          <div v-if="!isGuest" class="flex items-center gap-2">
             <div 
-              class="save-indicator"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg border"
               :class="{
-                'pending': saveStatus === 'pending',
-                'saving': saveStatus === 'saving',
-                'saved': saveStatus === 'saved',
-                'error': saveStatus === 'error'
+                'border-blue-200 bg-blue-50': saveStatus === 'pending',
+                'border-yellow-200 bg-yellow-50': saveStatus === 'saving',
+                'border-green-200 bg-green-50': saveStatus === 'saved',
+                'border-red-200 bg-red-50': saveStatus === 'error',
+                'border-gray-200 bg-gray-50': saveStatus === 'idle'
               }"
             >
               <Icon 
-                :name="saveStatus === 'pending' ? 'material-symbols:edit' : 
-                       saveStatus === 'saving' ? 'material-symbols:sync' : 
-                       saveStatus === 'saved' ? 'material-symbols:check-circle' : 
-                       saveStatus === 'error' ? 'material-symbols:error' : 
-                       'material-symbols:circle'"
+                :name="saveStatus === 'pending' ? 'heroicons:pencil' : 
+                       saveStatus === 'saving' ? 'heroicons:arrow-path' : 
+                       saveStatus === 'saved' ? 'heroicons:check-circle' : 
+                       saveStatus === 'error' ? 'heroicons:exclamation-triangle' : 
+                       'heroicons:circle'"
                 :class="{
                   'animate-spin': saveStatus === 'saving',
                   'text-blue-500': saveStatus === 'pending',
@@ -38,8 +41,9 @@
                   'text-red-500': saveStatus === 'error',
                   'text-gray-400': saveStatus === 'idle'
                 }"
+                class="w-4 h-4"
               />
-              <span class="save-text">
+              <span class="text-sm font-medium">
                 <template v-if="saveStatus === 'pending'">Guardando en {{ Math.ceil((100 - debounceProgress) * 0.02) }}s...</template>
                 <template v-else-if="saveStatus === 'saving'">Guardando...</template>
                 <template v-else-if="saveStatus === 'saved'">Guardado {{ formatLastSaved() }}</template>
@@ -48,10 +52,10 @@
               </span>
               
               <!-- Progress Bar -->
-              <div v-if="saveStatus === 'pending'" class="progress-container">
-                <div class="progress-bar">
+              <div v-if="saveStatus === 'pending'" class="w-16">
+                <div class="w-full bg-gray-200 rounded-full h-1">
                   <div 
-                    class="progress-fill"
+                    class="bg-blue-500 h-1 rounded-full transition-all duration-100"
                     :style="{ width: `${debounceProgress}%` }"
                   ></div>
                 </div>
@@ -59,37 +63,41 @@
             </div>
           </div>
           
-          <div class="document-actions">            
+          <div class="flex items-center gap-2">            
             <template v-if="!isGuest">
               <Button
-                :label="document?.is_published ? 'Despublicar' : 'Publicar'"
-                :icon="document?.is_published ? 'pi pi-eye-slash' : 'pi pi-eye'"
-                :severity="document?.is_published ? 'secondary' : 'success'"
+                :variant="document?.is_published ? 'secondary' : 'default'"
                 @click="togglePublish"
                 class="mr-2"
-              />
+              >
+                <Icon :name="document?.is_published ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-4 h-4 mr-2" />
+                {{ document?.is_published ? 'Despublicar' : 'Publicar' }}
+              </Button>
               
               <Button
-                icon="pi pi-pencil"
-                label="Editar"
+                variant="outline"
                 @click="showEditDialog = true"
-                severity="secondary"
                 class="mr-2"
-              />
+              >
+                <Icon name="heroicons:pencil" class="w-4 h-4 mr-2" />
+                Editar
+              </Button>
               
               <Button
-                icon="pi pi-send"
-                label="Compartir"
                 @click="showShareDialog = true"
                 class="mr-2"
-              />
+              >
+                <Icon name="heroicons:share" class="w-4 h-4 mr-2" />
+                Compartir
+              </Button>
               
               <Button
-                icon="pi pi-trash"
-                label="Eliminar"
+                variant="destructive"
                 @click="showDeleteConfirm = true"
-                severity="danger"
-              />
+              >
+                <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
+                Eliminar
+              </Button>
             </template>
           </div>
         </div>
@@ -97,7 +105,7 @@
     </div>
 
     <!-- Editor -->
-    <div class="document-content">
+    <div class="flex-1 p-4">
       <SocketIOEditor
         :document-id="documentId"
         :initial-content="parseDocumentContent(document?.content)"
@@ -108,41 +116,42 @@
     </div>
 
     <!-- Share Dialog -->
-    <Dialog 
-      v-model:visible="showShareDialog" 
-      header="Compartir Documento" 
-      :modal="true"
-      class="responsive-dialog"
-    >
-      <div class="share-content">
-        <div v-if="document?.is_published" class="share-link">
-          <label class="block text-sm font-medium mb-2">Enlace de Invitado</label>
-          <div class="flex gap-2">
-            <InputText 
-              :value="guestLink" 
-              readonly 
-              class="flex-1"
-            />
-            <Button 
-              icon="pi pi-copy" 
-              @click="copyToClipboard(guestLink)"
-              tooltip="Copiar enlace"
-            />
+    <Dialog v-model:open="showShareDialog">
+      <DialogContent class="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Compartir Documento</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div v-if="document?.is_published" class="space-y-2">
+            <label class="block text-sm font-medium">Enlace de Invitado</label>
+            <div class="flex gap-2">
+              <Input 
+                :value="guestLink" 
+                readonly 
+                class="flex-1"
+              />
+              <Button 
+                variant="outline"
+                @click="copyToClipboard(guestLink)"
+              >
+                <Icon name="heroicons:clipboard" class="w-4 h-4" />
+              </Button>
+            </div>
+            <p class="text-sm text-gray-600">
+              Cualquiera con este enlace puede ver el documento
+            </p>
           </div>
-          <small class="text-gray-600 mt-1 block">
-            Cualquiera con este enlace puede ver el documento
-          </small>
+          
+          <div v-else>
+            <Alert>
+              <Icon name="heroicons:information-circle" class="w-4 h-4" />
+              <AlertDescription>
+                Publica este documento para generar un enlace compartible
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-        
-        <div v-else class="publish-notice">
-          <Message 
-            severity="info" 
-            :closable="false"
-          >
-            Publica este documento para generar un enlace compartible
-          </Message>
-        </div>
-      </div>
+      </DialogContent>
     </Dialog>
 
     <!-- Edit Document Dialog -->

@@ -2,33 +2,30 @@
   <div class="profile-page">
     <!-- Loading State -->
     <div v-if="!user" class="loading-state">
-      <ProgressSpinner 
-        style="width: 50px; height: 50px" 
-        strokeWidth="4"
-        animationDuration="1s"
-      />
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       <p class="loading-text">Cargando perfil...</p>
     </div>
     
     <!-- Profile Content -->
     <div v-else class="profile-container">
       <Card class="profile-card">
-        <template #title>
-          <div class="profile-header">
-            <Avatar 
-              :label="user?.display_name?.charAt(0) || 'U'" 
-              :style="{ backgroundColor: user?.avatar_color || '#3B82F6' }"
-              size="large"
-              class="mr-3"
-            />
-            <div>
-              <h1>{{ user?.display_name || 'User' }}</h1>
-              <p class="text-gray-600">@{{ user?.username || 'username' }}</p>
+        <CardHeader>
+          <CardTitle>
+            <div class="profile-header">
+              <Avatar class="mr-3">
+                <AvatarFallback :style="{ backgroundColor: user?.avatar_color || '#3B82F6' }">
+                  {{ user?.display_name?.charAt(0) || 'U' }}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1>{{ user?.display_name || 'User' }}</h1>
+                <p class="text-gray-600">@{{ user?.username || 'username' }}</p>
+              </div>
             </div>
-          </div>
-        </template>
+          </CardTitle>
+        </CardHeader>
         
-        <template #content>
+        <CardContent>
           <div class="profile-content">
             <!-- Profile Settings -->
             <div class="profile-section">
@@ -37,24 +34,24 @@
               <form @submit.prevent="updateProfile" class="profile-form">
                 <div class="field">
                   <label for="displayName" class="block text-sm font-medium mb-2">Nombre para mostrar</label>
-                  <InputText
+                  <Input
                     id="displayName"
                     v-model="profileForm.display_name"
                     placeholder="Ingresa el nombre para mostrar"
-                    :class="{ 'p-invalid': errors.display_name }"
+                    :class="{ 'border-red-500': errors.display_name }"
                     required
                   />
-                  <small v-if="errors.display_name" class="p-error">{{ errors.display_name }}</small>
+                  <small v-if="errors.display_name" class="text-red-500">{{ errors.display_name }}</small>
                 </div>
                 
                 <div class="field">
                   <label for="avatarColor" class="block text-sm font-medium mb-2">Color del Avatar</label>
                   <div class="color-picker">
-                    <InputText
+                    <Input
                       id="avatarColor"
                       v-model="profileForm.avatar_color"
                       placeholder="#3B82F6"
-                      :class="{ 'p-invalid': errors.avatar_color }"
+                      :class="{ 'border-red-500': errors.avatar_color }"
                       required
                     />
                     <div 
@@ -62,25 +59,26 @@
                       :style="{ backgroundColor: profileForm.avatar_color }"
                     ></div>
                   </div>
-                  <small v-if="errors.avatar_color" class="p-error">{{ errors.avatar_color }}</small>
+                  <small v-if="errors.avatar_color" class="text-red-500">{{ errors.avatar_color }}</small>
                 </div>
                 
                 <Button
                   type="submit"
-                  label="Actualizar Perfil"
-                  icon="pi pi-save"
-                  :loading="profileLoading"
-                />
+                  :disabled="profileLoading"
+                >
+                  <Icon name="lucide:save" class="w-4 h-4 mr-2" />
+                  Actualizar Perfil
+                </Button>
                 
                 <div v-if="profileError" class="mt-3">
-                  <div class="p-message p-message-error">
-                    <span class="p-message-text">{{ profileError }}</span>
+                  <div class="p-3 text-red-600 bg-red-50 border border-red-200 rounded-md">
+                    <span>{{ profileError }}</span>
                   </div>
                 </div>
                 
                 <div v-if="profileSuccess" class="mt-3">
-                  <div class="p-message p-message-success">
-                    <span class="p-message-text">¡Perfil actualizado exitosamente!</span>
+                  <div class="p-3 text-green-600 bg-green-50 border border-green-200 rounded-md">
+                    <span>¡Perfil actualizado exitosamente!</span>
                   </div>
                 </div>
               </form>
@@ -92,20 +90,22 @@
               
               <div class="admin-actions">
                 <Button
-                  label="Gestionar Usuarios"
-                  icon="pi pi-users"
                   @click="showUserDialog = true"
                   class="mr-2"
-                />
+                >
+                  <Icon name="lucide:users" class="w-4 h-4 mr-2" />
+                  Gestionar Usuarios
+                </Button>
                 <Button
-                  label="Gestionar Documentos"
-                  icon="pi pi-file-edit"
                   @click="showDocumentDialog = true"
-                />
+                >
+                  <Icon name="lucide:file-edit" class="w-4 h-4 mr-2" />
+                  Gestionar Documentos
+                </Button>
               </div>
             </div>
           </div>
-        </template>
+        </CardContent>
       </Card>
     </div>
 
@@ -264,7 +264,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const { user, updateProfile: updateUserProfile, createUser: createNewUser, token } = useAuth()
 const router = useRouter()

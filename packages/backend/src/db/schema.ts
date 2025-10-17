@@ -14,7 +14,7 @@ export interface User {
 export interface Document {
   id: number;
   title: string;
-  content: string; // JSON string for Tiptap document
+  content: string;
   owner_id: number;
   is_published: boolean;
   created_at: string;

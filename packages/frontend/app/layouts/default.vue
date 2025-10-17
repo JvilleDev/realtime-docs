@@ -1,137 +1,158 @@
 <template>
-  <div class="default-layout">
+  <div class="min-h-screen bg-white flex flex-col overflow-hidden">
     <!-- Minimal Header -->
-    <header class="layout-header">
-      <div class="header-content">
+    <header class="sticky top-0 z-[1000] bg-white border-b border-gray-200 h-14">
+      <div class="flex items-center justify-between h-full px-4 max-w-7xl mx-auto w-full lg:px-4 md:px-3">
         <!-- Logo -->
-        <div class="header-logo">
-          <span class="logo-text">RealtimeDocs</span>
+        <div class="flex items-center">
+          <span class="text-xl font-semibold text-gray-900 lg:text-lg md:text-lg">RealtimeDocs</span>
         </div>
         
         <!-- Desktop User Actions -->
-        <div class="header-actions desktop-only">
+        <div class="hidden sm:flex items-center gap-3">
           <!-- Guest User -->
           <template v-if="!user">
-            <Badge 
-              value="Invitado" 
-              severity="secondary" 
-              class="guest-badge"
-            />
+            <Badge variant="secondary" class="text-xs">
+              Invitado
+            </Badge>
             <Button 
-              label="Iniciar sesión"
-              icon="pi pi-sign-in"
-              size="small"
+              size="sm"
               @click="handleNavigation('/login')"
-            />
+            >
+              <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 mr-2" />
+              Iniciar sesión
+            </Button>
           </template>
           
           <!-- Authenticated User -->
           <template v-else>
             <Avatar 
-              :label="user.display_name.charAt(0)" 
               :style="{ backgroundColor: user.avatar_color }"
-              size="small"
-              class="user-avatar"
-            />
-            <Button 
-              icon="pi pi-user" 
-              severity="secondary" 
-              text 
-              rounded
-              @click="handleNavigation('/profile')"
-              v-tooltip="'Perfil'"
-            />
-            <Button 
-              icon="pi pi-sign-out" 
-              severity="danger" 
-              text 
-              rounded
-              @click="logout"
-              v-tooltip="'Cerrar sesión'"
-            />
+              class="w-8 h-8 mr-1"
+            >
+              <AvatarFallback class="text-sm">
+                {{ user.display_name.charAt(0) }}
+              </AvatarFallback>
+            </Avatar>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    @click="handleNavigation('/profile')"
+                    class="p-2"
+                  >
+                    <Icon name="heroicons:user" class="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Perfil</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    @click="logout"
+                    class="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Cerrar sesión</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </template>
         </div>
 
         <!-- Mobile Menu Button -->
-        <div class="mobile-menu-button mobile-only">
+        <div class="flex sm:hidden">
           <Button 
-            icon="pi pi-bars" 
-            text 
-            rounded
+            variant="ghost"
+            size="sm"
             @click="showMobileMenu = !showMobileMenu"
-            class="menu-toggle"
-          />
+            class="p-2"
+          >
+            <Icon name="heroicons:bars-3" class="w-5 h-5" />
+          </Button>
         </div>
       </div>
 
       <!-- Mobile Menu Dropdown -->
-      <div v-if="showMobileMenu" class="mobile-menu mobile-only">
-        <div class="mobile-menu-content">
+      <div v-if="showMobileMenu" class="sm:hidden bg-white border-b border-gray-200 shadow-sm">
+        <div class="p-4 flex flex-col gap-3">
           <!-- Guest User Mobile -->
           <template v-if="!user">
-            <div class="mobile-menu-item">
-              <Badge 
-                value="Invitado" 
-                severity="secondary" 
-                class="guest-badge"
-              />
+            <div class="flex items-center py-2">
+              <Badge variant="secondary" class="text-xs">
+                Invitado
+              </Badge>
             </div>
             <Button 
-              label="Iniciar sesión"
-              icon="pi pi-sign-in"
-              size="small"
+              size="sm"
               @click="handleNavigation('/login')"
-              class="mobile-menu-button-full"
-            />
+              class="w-full"
+            >
+              <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 mr-2" />
+              Iniciar sesión
+            </Button>
           </template>
           
           <!-- Authenticated User Mobile -->
           <template v-else>
-            <div class="mobile-menu-item">
+            <div class="flex items-center py-2">
               <Avatar 
-                :label="user.display_name.charAt(0)" 
                 :style="{ backgroundColor: user.avatar_color }"
-                size="small"
-                class="mr-2"
-              />
-              <span class="user-name">{{ user.display_name }}</span>
+                class="w-8 h-8 mr-2"
+              >
+                <AvatarFallback class="text-sm">
+                  {{ user.display_name.charAt(0) }}
+                </AvatarFallback>
+              </Avatar>
+              <span class="font-medium text-gray-900">{{ user.display_name }}</span>
             </div>
             <Button 
-              label="Perfil"
-              icon="pi pi-user" 
-              severity="secondary" 
-              outlined
+              variant="outline"
               @click="handleNavigation('/profile')"
-              class="mobile-menu-button-full"
-            />
+              class="w-full"
+            >
+              <Icon name="heroicons:user" class="w-4 h-4 mr-2" />
+              Perfil
+            </Button>
             <Button 
-              label="Cerrar sesión"
-              icon="pi pi-sign-out" 
-              severity="danger" 
-              outlined
+              variant="outline"
               @click="logout"
-              class="mobile-menu-button-full"
-            />
+              class="w-full text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 mr-2" />
+              Cerrar sesión
+            </Button>
           </template>
         </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <div class="layout-content">
+    <div class="flex-1 p-0 max-w-7xl mx-auto w-full overflow-hidden flex flex-col">
       <slot />
     </div>
-
-    <!-- Toast Container -->
-    <Toast />
-    
-    <!-- Confirmation Dialog -->
-    <ConfirmDialog />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useAuth } from '~/composables/useAuth'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 const { user, logout: authLogout } = useAuth()
 const showMobileMenu = ref(false)
@@ -148,150 +169,3 @@ const handleNavigation = (path: string) => {
   navigateTo(path)
 }
 </script>
-
-<style scoped>
-.default-layout {
-  height: 100vh;
-  background: white !important;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.layout-header {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: white !important;
-  border-bottom: 1px solid #e5e7eb;
-  height: 56px;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.header-logo {
-  display: flex;
-  align-items: center;
-}
-
-.logo-text {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827 !important;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.guest-badge {
-  font-size: 0.75rem;
-}
-
-.user-avatar {
-  margin-right: 0.25rem;
-}
-
-.layout-content {
-  flex: 1;
-  padding: 0;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Mobile Menu Styles */
-.mobile-menu {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.mobile-menu-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.mobile-menu-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0;
-}
-
-.user-name {
-  font-weight: 500;
-  color: #111827;
-}
-
-.mobile-menu-button-full {
-  width: 100%;
-}
-
-/* Responsive Visibility Classes */
-.desktop-only {
-  display: flex;
-}
-
-.mobile-only {
-  display: none;
-}
-
-/* Responsive Breakpoints */
-@media (max-width: 1024px) {
-  .header-content {
-    padding: 0 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .header-content {
-    padding: 0 0.75rem;
-  }
-  
-  .header-actions {
-    gap: 0.5rem;
-  }
-  
-  .logo-text {
-    font-size: 1.125rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .desktop-only {
-    display: none;
-  }
-  
-  .mobile-only {
-    display: block;
-  }
-  
-  .mobile-menu-button {
-    display: flex;
-  }
-  
-  .header-content {
-    padding: 0 0.5rem;
-  }
-  
-  .logo-text {
-    font-size: 1rem;
-  }
-}
-</style>
