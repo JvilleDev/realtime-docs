@@ -37,7 +37,7 @@ export interface Session {
 }
 
 export function initDatabase(): Database {
-  const dbPath = process.env.DATABASE_PATH || '/Users/johann/Development/realtime-docs/data/realtime-docs.db';
+  const dbPath = './data/realtime-docs.db';
   
   // Ensure the directory exists
   const dir = dbPath.substring(0, dbPath.lastIndexOf('/'));
@@ -47,7 +47,7 @@ export function initDatabase(): Database {
     // Directory might already exist, ignore error
   }
   
-  const db = new Database(dbPath, { create: true });
+  const db = new Database(dbPath, { create: true, readwrite: true });
 
   // Create tables
   db.exec(`
