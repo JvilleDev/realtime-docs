@@ -24,11 +24,9 @@ export const useSaveStatus = () => {
   const debounceTimer = globalDebounceTimer!
   
   const setPending = (debounceDelay: number) => {
-    console.log('🎯 setPending called with delay:', debounceDelay)
     status.value = 'pending'
     errorMessage.value = ''
     debounceProgress.value = 0
-    console.log('📊 Status changed to pending:', status.value)
     
     // Clear existing timer
     if (debounceTimer.value) {

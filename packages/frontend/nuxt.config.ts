@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: "2025-10-12",
   devtools: { enabled: process.env.NODE_ENV === 'development' },
-  modules: ['shadcn-nuxt', ['@nuxtjs/google-fonts', {families: {"Outfit": [400,600,700,800]}}], '@nuxt/icon'],
+  modules: ['@pinia/nuxt', 'shadcn-nuxt', ['@nuxtjs/google-fonts', {families: {"Outfit": [400,600,700,800]}}], '@nuxt/icon'],
   shadcn: {
     prefix: '',
     componentDir: '@/components/ui'
@@ -11,6 +11,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       backendUrl: process.env.BACKEND_URL || 'http://localhost:3001',
+      hocuspocusUrl: process.env.COLLABORATION_URL || 'ws://localhost:3002/hocuspocus',
     }
   },
   css: ['~/assets/css/tailwind.css', "~/assets/css/global.css"],
@@ -18,6 +19,8 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    server: {
+      allowedHosts: ["ra8n4v-ip-186-98-52-93.tunnelmole.net"]}
   },
   ssr: true,
   routeRules: {

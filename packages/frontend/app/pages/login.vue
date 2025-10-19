@@ -62,12 +62,16 @@
       </Card>
     </div>
   </div>
+
+  <!-- Debug Floating Button (Development Only) -->
+  <DebugFloatingButton />
 </template>
 
 <script setup lang="ts">
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import DebugFloatingButton from '~/components/DebugFloatingButton.vue'
 
 definePageMeta({
   layout: false

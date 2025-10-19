@@ -1,5 +1,5 @@
 <template>
-  <div class="socketio-editor">
+  <div class="hocuspocus-editor">
     <!-- Floating Toolbar -->
     <div 
       v-if="showFloatingToolbar && editor" 
@@ -111,6 +111,18 @@
       </div>
     </div>
 
+    <!-- Connection Status -->
+    <div v-if="connectionStatus !== 'connected'" class="connection-status">
+      <div class="status-indicator" :class="connectionStatus">
+        <Icon v-if="connectionStatus === 'connecting'" name="material-symbols:sync" class="animate-spin"/>
+        <Icon v-else-if="connectionStatus === 'error'" name="material-symbols:error"/>
+        <Icon v-else name="material-symbols:cloud-off"/>
+      </div>
+      <span class="status-text">
+        {{ getStatusText() }}
+      </span>
+    </div>
+
     <!-- Editor Content -->
     <div class="editor-container">
       <div class="editor-content" ref="editorRef">
@@ -118,27 +130,27 @@
       </div>
     </div>
 
-    <!-- User Cursors (excluding own cursor) -->
+    <!-- User Cursors (from awareness) -->
     <div class="user-cursors">
       <div
-        v-for="(cursor, userId) in otherUsersCursors"
-        :key="userId"
+        v-for="(state, clientId) in awarenessStates"
+        :key="clientId"
         class="user-cursor"
-        :style="getCursorStyle(cursor)"
+        :style="getCursorStyle(state)"
       >
         <div 
           class="cursor-line"
           :class="{
-            'admin-cursor': cursor.userInfo?.is_admin
+            'admin-cursor': state.user?.is_admin
           }"
-          :style="{ backgroundColor: cursor.userInfo?.avatar_color || '#3B82F6' }"
+          :style="{ backgroundColor: state.user?.avatar_color || '#3B82F6' }"
         ></div>
         <div 
           class="cursor-label"
-          :style="{ backgroundColor: cursor.userInfo?.avatar_color || '#3B82F6' }"
+          :style="{ backgroundColor: state.user?.avatar_color || '#3B82F6' }"
         >
-          {{ cursor.userInfo?.display_name || 'Usuario' }}
-          <span v-if="cursor.userInfo?.is_admin" class="admin-badge">👑</span>
+          {{ state.user?.display_name || 'Usuario' }}
+          <span v-if="state.user?.is_admin" class="admin-badge">👑</span>
         </div>
       </div>
     </div>
@@ -148,9 +160,10 @@
 <script setup lang="ts">
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { useAuth } from '~/composables/useAuth'
-import { useSocketIO } from '~/composables/useSocketIO'
-import { useDebounceFn } from '@vueuse/core'
+import { useHocuspocus } from '~/composables/useHocuspocus'
 
 interface Props {
   documentId: string
@@ -174,62 +187,29 @@ const editor = ref<Editor>()
 const showFloatingToolbar = ref(false)
 const floatingToolbarStyle = ref({})
 
-// Socket.IO for real-time collaboration
+// Hocuspocus for real-time collaboration
 const { 
-  socket, 
+  provider,
+  document: ydoc,
   isConnected, 
-  peerId, 
-  connect: connectSocket, 
-  disconnect: disconnectSocket,
-  joinDocument,
-  leaveDocument,
-  updateDocument,
-  moveCursor,
-  startTyping,
-  stopTyping
-} = useSocketIO()
+  connectionStatus,
+  connect: connectHocuspocus, 
+  disconnect: disconnectHocuspocus,
+  getAwareness
+} = useHocuspocus()
 
 const { user } = useAuth()
 
-// Real-time collaboration state
-const cursors = ref<Record<string, any>>({})
-const typingUsers = ref<Set<string>>(new Set())
-
-// Computed property to filter out own cursor
-const otherUsersCursors = computed(() => {
-  const filtered: Record<string, any> = {}
-  Object.entries(cursors.value).forEach(([userId, cursor]) => {
-    if (userId !== peerId.value) {
-      filtered[userId] = cursor
-    }
-  })
-  return filtered
-})
-
-// Clean up old cursors periodically
-const cleanupOldCursors = () => {
-  const now = Date.now()
-  const maxAge = 30000 // 30 seconds
-  
-  Object.keys(cursors.value).forEach(userId => {
-    const cursor = cursors.value[userId]
-    if (cursor.timestamp && (now - cursor.timestamp) > maxAge) {
-      delete cursors.value[userId]
-    }
-  })
-}
-
-// Run cleanup every 10 seconds
-let cleanupInterval: NodeJS.Timeout | null = null
+// Awareness states for user cursors
+const awarenessStates = ref<Map<number, any>>(new Map())
 
 // Initialize editor
 onMounted(async () => {
   if (!editorRef.value) return
 
   try {
-
-    // Connect to Socket.IO
-    connectSocket()
+    // Connect to Hocuspocus
+    connectHocuspocus(props.documentId)
 
     // Wait for connection
     await new Promise<void>((resolve) => {
@@ -239,9 +219,9 @@ onMounted(async () => {
       }
 
       const timeout = setTimeout(() => {
-        console.warn('⚠️ Socket.IO connection timeout, proceeding anyway')
+        console.warn('⚠️ Hocuspocus connection timeout, proceeding anyway')
         resolve()
-      }, 5000)
+      }, 10000)
 
       watch(isConnected, (connected) => {
         if (connected) {
@@ -251,71 +231,25 @@ onMounted(async () => {
       })
     })
 
-    // Join document room
-    joinDocument(props.documentId)
-
-    // Setup Socket.IO event listeners
-    if (socket.value) {
-      // Handle document updates from other users
-      socket.value.on('document:update', (data: any) => {
-        
-        // Only apply if it's from another user
-        if (data.userId !== peerId.value) {
-          if (editor.value) {
-            editor.value.commands.setContent(data.content, { emitUpdate: false })
-          }
-        }
+    // Setup awareness for user cursors
+    const awareness = getAwareness()
+    if (awareness) {
+      // Set local user info
+      awareness.setLocalStateField('user', {
+        id: user.value?.id,
+        display_name: user.value?.display_name || 'Usuario',
+        avatar_color: user.value?.avatar_color || '#3B82F6',
+        is_admin: user.value?.is_admin || false
       })
 
-      // Handle cursor movements (filter out guests)
-      socket.value.on('cursor:move', (data: any) => {
-        // Skip guest cursors - they don't have cursors
-        if (data.isGuest === true) {
-          return;
-        }
-        
-        if (data.userId !== peerId.value && data.position && data.userInfo) {
-          cursors.value[data.userId] = {
-            position: data.position,
-            userInfo: data.userInfo,
-            timestamp: data.timestamp || Date.now()
-          }
-        }
-      })
-
-      // Handle typing status
-      socket.value.on('typing:start', (data: any) => {
-        if (data.userId !== peerId.value) {
-          typingUsers.value.add(data.userId)
-        }
-      })
-
-      socket.value.on('typing:stop', (data: any) => {
-        if (data.userId !== peerId.value) {
-          typingUsers.value.delete(data.userId)
-        }
-      })
-
-      // Handle presence updates
-      socket.value.on('presence:init', (presence: any) => {
-        cursors.value = presence
-      })
-
-      socket.value.on('presence:update', (data: any) => {
-        if (data.type === 'user_joined') {
-          cursors.value[data.userId] = {
-            position: { anchor: 0, head: 0 },
-            userInfo: data.userInfo,
-            timestamp: Date.now()
-          }
-        } else if (data.type === 'user_left') {
-          delete cursors.value[data.userId]
-          typingUsers.value.delete(data.userId)
-        }
+      // Listen for awareness changes
+      awareness.on('change', () => {
+        const states = awareness.getStates()
+        awarenessStates.value = new Map(states)
       })
     }
 
-    // Initialize editor
+    // Initialize editor with collaboration
     editor.value = new Editor({
       element: editorRef.value,
       extensions: [
@@ -325,6 +259,20 @@ onMounted(async () => {
           },
           hardBreak: {
             keepMarks: false,
+          },
+          // Disable history since collaboration handles it
+          history: false,
+        }),
+        // Add collaboration extension
+        Collaboration.configure({
+          document: ydoc,
+        }),
+        // Add collaboration cursor extension
+        CollaborationCaret.configure({
+          provider: provider.value,
+          user: {
+            name: user.value?.display_name || 'Usuario',
+            color: user.value?.avatar_color || '#3B82F6',
           },
         }),
       ],
@@ -357,20 +305,7 @@ onMounted(async () => {
       onUpdate: ({ editor }) => {
         if (!props.isGuest) {
           const content = editor.getJSON()
-          emit('content-change', content)          
-          updateDocument(props.documentId, content)
-        }
-      },
-      onSelectionUpdate: ({ editor }) => {
-        if (!props.isGuest && isConnected.value) {
-          const { state } = editor
-          const { selection } = state
-          const { from, to } = selection
-          
-          // Only send cursor updates for text selections (not block selections)
-          if (selection.empty) {
-            moveCursor(props.documentId, { anchor: from, head: to })
-          }
+          emit('content-change', content)
         }
       },
     })
@@ -378,13 +313,11 @@ onMounted(async () => {
     // Setup floating toolbar
     setupFloatingToolbar()
 
-    console.log('✅ Socket.IO editor initialized successfully')
+    console.log('✅ Hocuspocus editor initialized successfully')
     
-    // Start cursor cleanup interval
-    cleanupInterval = setInterval(cleanupOldCursors, 10000)
-
   } catch (error) {
-    console.error('❌ Error initializing Socket.IO editor:', error)
+    console.error('❌ Error initializing Hocuspocus editor:', error)
+    // Fallback to basic editor without collaboration
     try {
       editor.value = new Editor({
         element: editorRef.value,
@@ -477,9 +410,25 @@ const setupFloatingToolbar = () => {
   })
 }
 
-// Get cursor style for positioning
-const getCursorStyle = (cursor: any) => {
-  if (!editor.value || !cursor.position || !editorRef.value) {
+// Get status text for connection status
+const getStatusText = () => {
+  switch (connectionStatus.value) {
+    case 'connecting':
+      return 'Conectando...'
+    case 'connected':
+      return 'Conectado'
+    case 'error':
+      return 'Error de conexión'
+    case 'disconnected':
+      return 'Desconectado'
+    default:
+      return 'Desconectado'
+  }
+}
+
+// Get cursor style for positioning (simplified for awareness)
+const getCursorStyle = (state: any) => {
+  if (!editor.value || !state.cursor || !editorRef.value) {
     return {
       position: 'absolute',
       left: '0px',
@@ -491,7 +440,7 @@ const getCursorStyle = (cursor: any) => {
   }
   
   try {
-    const { anchor } = cursor.position
+    const { anchor } = state.cursor
     
     // Use TipTap's coordsAtPos method to get accurate coordinates
     const coords = editor.value.view.coordsAtPos(anchor)
@@ -500,7 +449,6 @@ const getCursorStyle = (cursor: any) => {
     const containerRect = editorRef.value.getBoundingClientRect()
     
     // Calculate position relative to the editor container
-    // Account for scroll position and container offset
     const relativeLeft = coords.left - containerRect.left
     const relativeTop = coords.top - containerRect.top
     
@@ -552,32 +500,69 @@ onUnmounted(() => {
     }
   }
   
-  // Clear cleanup interval
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval)
-    cleanupInterval = null
-  }
-  
-  // Clear all cursors
-  cursors.value = {}
-  typingUsers.value.clear()
-  
-  // Leave document and disconnect
-  if (isConnected.value) {
-    leaveDocument(props.documentId)
-  }
-  disconnectSocket()
+  // Disconnect from Hocuspocus
+  disconnectHocuspocus()
 })
 </script>
 
 <style scoped>
-.socketio-editor {
+.hocuspocus-editor {
   position: relative;
   width: 100%;
   min-height: 100vh;
   background: white;
   display: flex;
   flex-direction: column;
+}
+
+.connection-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-indicator.connecting {
+  background: #f59e0b;
+  color: white;
+}
+
+.status-indicator.connected {
+  background: #10b981;
+  color: white;
+}
+
+.status-indicator.error {
+  background: #ef4444;
+  color: white;
+}
+
+.status-indicator.disconnected {
+  background: #6b7280;
+  color: white;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
 }
 
 .floating-toolbar {
@@ -680,11 +665,6 @@ onUnmounted(() => {
   border-radius: 1.5px;
 }
 
-.local-cursor {
-  opacity: 0.8;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-}
-
 .cursor-label {
   position: absolute;
   top: -32px;
@@ -720,7 +700,6 @@ onUnmounted(() => {
   31%, 60% { opacity: 0.6; box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
   61%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); }
 }
-
 
 /* Floating toolbar animations */
 .floating-toolbar {
@@ -773,15 +752,15 @@ onUnmounted(() => {
     min-height: calc(100vh - 300px);
   }
   
-  .socketio-editor .ProseMirror h1 {
+  .hocuspocus-editor .ProseMirror h1 {
     font-size: 1.875rem;
   }
   
-  .socketio-editor .ProseMirror h2 {
+  .hocuspocus-editor .ProseMirror h2 {
     font-size: 1.5rem;
   }
   
-  .socketio-editor .ProseMirror h3 {
+  .hocuspocus-editor .ProseMirror h3 {
     font-size: 1.25rem;
   }
   
@@ -804,6 +783,12 @@ onUnmounted(() => {
   .toolbar-group {
     flex-shrink: 0;
   }
+  
+  .connection-status {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -824,15 +809,15 @@ onUnmounted(() => {
     min-height: calc(100vh - 250px);
   }
   
-  .socketio-editor .ProseMirror h1 {
+  .hocuspocus-editor .ProseMirror h1 {
     font-size: 1.5rem;
   }
   
-  .socketio-editor .ProseMirror h2 {
+  .hocuspocus-editor .ProseMirror h2 {
     font-size: 1.25rem;
   }
   
-  .socketio-editor .ProseMirror h3 {
+  .hocuspocus-editor .ProseMirror h3 {
     font-size: 1.125rem;
   }
   
@@ -856,6 +841,16 @@ onUnmounted(() => {
     font-size: 10px;
     padding: 2px 6px;
     top: -24px;
+  }
+  
+  .connection-status {
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px;
+  }
+  
+  .status-text {
+    font-size: 10px;
   }
 }
 </style>

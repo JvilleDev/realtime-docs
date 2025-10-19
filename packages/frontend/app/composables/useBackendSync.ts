@@ -40,7 +40,6 @@ export const useBackendSync = () => {
     if (isPolling.value) return
     
     isPolling.value = true
-    console.log(`🔄 Starting backend sync polling for document ${documentId}`)
     
     syncInterval.value = setInterval(async () => {
       await syncWithBackend(documentId)
@@ -53,7 +52,6 @@ export const useBackendSync = () => {
       syncInterval.value = null
     }
     isPolling.value = false
-    console.log('⏹️ Stopped backend sync polling')
   }
   
   const syncWithBackend = async (documentId: string) => {
@@ -77,7 +75,6 @@ export const useBackendSync = () => {
       })
       
       lastSyncTime.value = new Date()
-      console.log(`✅ Backend sync completed for document ${documentId}`)
       
       // Parse content if it exists
       if (response && typeof response === 'object' && 'content' in response) {
@@ -86,7 +83,6 @@ export const useBackendSync = () => {
       
       return response
     } catch (error) {
-      console.error('❌ Backend sync failed:', error)
       
       // Check if it's a timeout error
       if (error && typeof error === 'object' && 'cause' in error) {
@@ -110,7 +106,6 @@ export const useBackendSync = () => {
               timeout: 60000, // 60 seconds for retry
               retry: 1
             })
-            console.log(`✅ Backend sync retry successful for document ${documentId}`)
             return retryResponse
           } catch (retryError) {
             console.error('❌ Backend sync retry also failed:', retryError)
@@ -125,7 +120,6 @@ export const useBackendSync = () => {
   const saveToBackend = async (documentId: string, content: any, changeData?: any) => {
     // Guests cannot save documents
     if (!token.value || !user.value) {
-      console.log('🚫 Guest users cannot save documents')
       return
     }
     
@@ -147,7 +141,6 @@ export const useBackendSync = () => {
       })
       
       lastSyncTime.value = new Date()
-      console.log(`💾 Document ${documentId} saved to backend`)
       
       return response
     } catch (error) {
@@ -174,7 +167,6 @@ export const useBackendSync = () => {
               timeout: 60000, // 60 seconds for retry
               retry: 1
             })
-            console.log(`✅ Document ${documentId} save retry successful`)
             return retryResponse
           } catch (retryError) {
             console.error('❌ Document save retry also failed:', retryError)
@@ -206,7 +198,6 @@ export const useBackendSync = () => {
         retryDelay: 1000
       })
       
-      console.log(`📥 Document ${documentId} loaded from backend`)
       
       // Parse content if it exists
       if (response && typeof response === 'object' && 'content' in response) {
@@ -239,7 +230,6 @@ export const useBackendSync = () => {
               timeout: 60000, // 60 seconds for retry
               retry: 1
             })
-            console.log(`✅ Document ${documentId} load retry successful`)
             return retryResponse
           } catch (retryError) {
             console.error('❌ Document load retry also failed:', retryError)
@@ -266,7 +256,6 @@ export const useBackendSync = () => {
         }
       })
       
-      console.log(`📄 Document created in backend:`, (response as any).id)
       return response
     } catch (error) {
       console.error('❌ Failed to create document in backend:', error)
@@ -284,7 +273,6 @@ export const useBackendSync = () => {
         }
       })
       
-      console.log(`🗑️ Document ${documentId} deleted from backend`)
     } catch (error) {
       console.error('❌ Failed to delete document from backend:', error)
       throw error

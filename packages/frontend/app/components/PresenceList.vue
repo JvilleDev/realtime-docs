@@ -2,25 +2,19 @@
   <div class="presence-list">
     <div class="active-users">
       <div 
-        v-for="[userId, userInfo] in activeUsers" 
+        v-for="[userId, userInfo] in uniqueUsers" 
         :key="userId"
-        class="user-presence"
+        class="user-avatar-container"
+        :title="userInfo.display_name"
       >
-        <Avatar 
-          :label="userInfo.isGuest ? 'G' : userInfo.display_name.charAt(0)" 
+        <div 
+          class="user-avatar"
           :style="{ backgroundColor: userInfo.avatar_color }"
-          size="small"
-          class="mr-2"
-        />
-        <span class="user-name">{{ userInfo.display_name }}</span>
-        <span v-if="userInfo.isGuest" class="guest-badge">Invitado</span>
+        >
+          {{ userInfo.isGuest ? 'G' : userInfo.display_name.charAt(0) }}
+        </div>
         <div class="status-indicator" :style="{ backgroundColor: userInfo.avatar_color }"></div>
       </div>
-    </div>
-    
-    <div v-if="activeUsers.size === 0" class="no-users">
-      <i class="pi pi-users text-gray-400"></i>
-      <span class="text-sm text-gray-500">No hay usuarios activos</span>
     </div>
   </div>
 </template>
@@ -28,14 +22,38 @@
 <script setup lang="ts">
 interface Props {
   activeUsers: Map<string, any>
+  compact?: boolean
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  compact: false
+})
+
+// Computed property to ensure unique users (one presence per user)
+const uniqueUsers = computed(() => {
+  const userMap = new Map()
+  
+  // Process all users and keep only the latest entry for each unique user
+  props.activeUsers.forEach((userInfo, userId) => {
+    // Use display_name as the unique identifier to avoid duplicates
+    const uniqueKey = userInfo.display_name || userId
+    
+    // Keep the most recent entry (or the first one if timestamps are equal)
+    if (!userMap.has(uniqueKey) || 
+        (userInfo.timestamp && userMap.get(uniqueKey).timestamp && 
+         userInfo.timestamp > userMap.get(uniqueKey).timestamp)) {
+      userMap.set(uniqueKey, userInfo)
+    }
+  })
+  
+  return Array.from(userMap.entries())
+})
 </script>
 
 <style scoped>
 .presence-list {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
 }
@@ -46,45 +64,36 @@ defineProps<Props>()
   gap: 8px;
 }
 
-.user-presence {
+.user-avatar-container {
+  position: relative;
   display: flex;
   align-items: center;
-  position: relative;
-  padding: 4px 8px;
-  background: #f9fafb;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
+  justify-content: center;
 }
 
-.user-name {
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.guest-badge {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 2px 6px;
-  border-radius: 8px;
-  margin-left: 4px;
+  font-weight: 600;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .status-indicator {
-  width: 8px;
-  height: 8px;
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-left: 4px;
+  border: 2px solid white;
   animation: pulse 2s infinite;
-}
-
-.no-users {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
 }
 
 @keyframes pulse {

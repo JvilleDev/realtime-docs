@@ -268,9 +268,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { usePageTitleStore } from '~/stores/pageTitle'
 
 const { user, updateProfile: updateUserProfile, createUser: createNewUser, token } = useAuth()
 const router = useRouter()
+const pageTitleStore = usePageTitleStore()
 
 // Profile form
 const profileForm = reactive({
@@ -315,6 +317,9 @@ const documents = ref([])
 const documentsLoading = ref(false)
 
 onMounted(() => {
+  // Set page title
+  pageTitleStore.setTitle('Perfil')
+  
   if (user.value) {
     profileForm.display_name = user.value.display_name || ''
     profileForm.avatar_color = user.value.avatar_color || '#3B82F6'
@@ -464,13 +469,9 @@ watch(showDocumentDialog, (newValue) => {
   }
 })
 
-// Redirect if not logged in
 onMounted(async () => {
-  // Wait a bit for auth to initialize
   await nextTick()
-  
   if (!user.value) {
-    console.log('No user found, redirecting to login')
     await router.push('/login')
   }
 })

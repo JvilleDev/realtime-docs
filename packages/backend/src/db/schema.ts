@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 import bcrypt from 'bcryptjs';
-
+import fs from 'fs';
 export interface User {
   id: number;
   username: string;
@@ -42,12 +42,12 @@ export function initDatabase(): Database {
   // Ensure the directory exists
   const dir = dbPath.substring(0, dbPath.lastIndexOf('/'));
   try {
-    Bun.mkdir(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true });
   } catch (error) {
-    // Directory might already exist, ignore error
+    console.error('Error creating directory:', error);
   }
   
-  const db = new Database(dbPath, { create: true, readwrite: true });
+  const db = new Database(dbPath, { create: true });
 
   // Create tables
   db.exec(`

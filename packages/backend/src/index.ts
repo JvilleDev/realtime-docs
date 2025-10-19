@@ -3,14 +3,19 @@ import { Server as SocketIOServer } from 'socket.io';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import expressWs from 'express-ws';
 import { initDatabase } from './db/schema';
 import { setupSocketHandlers } from './socket/socket.handler';
 import { createAuthService } from './auth/auth.service';
 import { createDocumentService } from './documents/document.service';
-// Removed Yjs WebSocket server - using Socket.IO instead
+import { createHocuspocusServer } from './hocuspocus/hocuspocus.server';
 
 const app = express();
 const server = createServer(app);
+
+// Setup express-ws for WebSocket support
+const { app: wsApp } = expressWs(app, server);
+
 const io = new SocketIOServer(server, {
   cors: {
     origin: (origin, callback) => {
@@ -75,6 +80,9 @@ app.use(express.json());
 // Initialize database
 const db = initDatabase();
 
+// Initialize Hocuspocus server
+const hocuspocusServer = createHocuspocusServer(db);
+
 // Routes
 app.use('/api/auth', createAuthService(db));
 app.use('/api/documents', createDocumentService(db));
@@ -84,15 +92,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Setup Socket.IO handlers
+// Setup Socket.IO handlers (for presence and cursors)
 setupSocketHandlers(io, db);
 
 const PORT = process.env.PORT || 3001;
+const HOCUSPOCUS_PORT = process.env.HOCUSPOCUS_PORT || 3002;
 
-server.listen(PORT, () => {
+// Start the main Express server
+server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Database initialized at ${process.env.DATABASE_PATH || './data/realtime-docs.db'}`);
   console.log(`🔌 Socket.IO server available at http://localhost:${PORT}/socket.io/`);
+  
+  // Start the Hocuspocus server
+  try {
+    await hocuspocusServer.listen(HOCUSPOCUS_PORT);
+    console.log(`🤝 Hocuspocus collaboration server running on port ${HOCUSPOCUS_PORT}`);
+  } catch (error) {
+    console.error('Failed to start Hocuspocus server:', error);
+  }
 });
 
 export { db };

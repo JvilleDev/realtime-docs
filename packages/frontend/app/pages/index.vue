@@ -1,91 +1,110 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 p-0">
-    <!-- Header Section -->
-    <div class="bg-white border-b border-slate-200 py-8 mb-8 lg:py-6 md:py-6 sm:py-4">
-      <div class="max-w-7xl mx-auto px-6 lg:px-4 md:px-4 sm:px-3 flex justify-between items-center lg:flex-col lg:items-start lg:gap-6">
-        <div class="flex-1">
-          <h1 class="m-0 mb-2 text-4xl lg:text-3xl md:text-3xl sm:text-2xl font-bold text-slate-800 flex items-center">
-            <Icon name="heroicons:folder-open" class="text-primary mr-3" />
-            {{ user ? 'Mis Documentos' : 'Documentos Públicos' }}
-          </h1>
-          <p class="m-0 text-lg md:text-base font-normal text-slate-500">
-            {{ user ? 'Gestiona y colabora en tus documentos' : 'Explora documentos compartidos públicamente' }}
-          </p>
-        </div>
-        
-        <div class="flex items-center gap-8 lg:w-full lg:justify-between md:gap-4">
-          <div class="flex gap-6 md:gap-4">
-            <div class="text-center">
-              <span class="block text-3xl md:text-2xl font-bold text-blue-600 leading-none">{{ documents.length }}</span>
-              <span class="block text-sm text-slate-500 mt-1">Documentos</span>
-            </div>
-            <div class="text-center">
-              <span class="block text-3xl md:text-2xl font-bold text-blue-600 leading-none">{{ publishedCount }}</span>
-              <span class="block text-sm text-slate-500 mt-1">Publicados</span>
-            </div>
-          </div>
-          
-          <Button
-            v-if="user"
-            @click="createDocument"
-            :disabled="creatingDocument"
-            class="px-6 py-3 text-base font-semibold"
-          >
-            <Icon name="heroicons:plus" class="w-4 h-4 mr-2" />
-            Nuevo Documento
-          </Button>
-        </div>
-      </div>
-    </div>
 
     <!-- Controls Section -->
-    <div class="max-w-7xl mx-auto mb-8 px-6 lg:px-4 md:px-4 sm:px-3 flex justify-between items-center gap-4 lg:flex-col lg:items-stretch lg:gap-4">
-      <div class="flex-1">
-        <div class="relative max-w-md lg:max-w-none">
-          <Icon name="heroicons:magnifying-glass" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-lg" />
+    <div class="max-w-7xl mx-auto mb-6 px-4 sm:px-6 lg:px-8 pt-6">
+      <!-- Mobile Layout -->
+      <div class="lg:hidden space-y-4">
+        <!-- Search -->
+        <div class="relative">
+          <Icon name="heroicons:magnifying-glass" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-sm" />
           <Input
             v-model="searchQuery"
             placeholder="Buscar documentos..."
-            class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white transition-all duration-200 focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+            class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm bg-white"
           />
         </div>
-      </div>
-      
-      <div class="flex items-center gap-4 lg:justify-between">
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-slate-600">Ordenar por:</label>
-          <Select v-model="sortBy">
-            <SelectTrigger class="min-w-[180px]">
-              <SelectValue placeholder="Seleccionar" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="option in sortOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         
-        <div class="flex items-center">
+        <!-- Controls Row -->
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-medium text-slate-600">Ordenar:</label>
+            <Select v-model="sortBy">
+              <SelectTrigger class="min-w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="option in sortOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
           <Button
             :variant="currentLayout === 'grid' ? 'default' : 'outline'"
             @click="toggleLayout"
-            class="w-10 h-10 rounded-lg"
+            size="sm"
+            class="w-8 h-8 rounded-lg"
           >
             <Icon :name="currentLayout === 'grid' ? 'heroicons:squares-2x2' : 'heroicons:list-bullet'" class="w-4 h-4" />
           </Button>
         </div>
         
-        <div v-if="user && selectedDocuments.length > 0" class="flex items-center gap-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+        <!-- Selection Actions -->
+        <div v-if="user && selectedDocuments.length > 0" class="flex items-center justify-between gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+          <span class="text-xs text-red-600 font-medium">{{ selectedDocuments.length }} seleccionados</span>
           <Button
             variant="destructive"
             @click="showDeleteConfirm = true"
-            class="text-sm"
+            size="sm"
+            class="text-xs"
           >
-            <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
-            Eliminar Seleccionados
+            <Icon name="heroicons:trash" class="w-3 h-3 mr-1" />
+            Eliminar
           </Button>
-          <span class="text-sm text-red-600 font-medium">{{ selectedDocuments.length }} seleccionados</span>
+        </div>
+      </div>
+      
+      <!-- Desktop Layout -->
+      <div class="hidden lg:flex justify-between items-center gap-4">
+        <div class="flex-1">
+          <div class="relative max-w-md">
+            <Icon name="heroicons:magnifying-glass" class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 text-lg" />
+            <Input
+              v-model="searchQuery"
+              placeholder="Buscar documentos..."
+              class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base bg-white transition-all duration-200 focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-600">Ordenar por:</label>
+            <Select v-model="sortBy">
+              <SelectTrigger class="min-w-[180px]">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="option in sortOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div class="flex items-center">
+            <Button
+              :variant="currentLayout === 'grid' ? 'default' : 'outline'"
+              @click="toggleLayout"
+              class="w-10 h-10 rounded-lg"
+            >
+              <Icon :name="currentLayout === 'grid' ? 'heroicons:squares-2x2' : 'heroicons:list-bullet'" class="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <div v-if="user && selectedDocuments.length > 0" class="flex items-center gap-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+            <Button
+              variant="destructive"
+              @click="showDeleteConfirm = true"
+              class="text-sm"
+            >
+              <Icon name="heroicons:trash" class="w-4 h-4 mr-2" />
+              Eliminar Seleccionados
+            </Button>
+            <span class="text-sm text-red-600 font-medium">{{ selectedDocuments.length }} seleccionados</span>
+          </div>
         </div>
       </div>
     </div>
@@ -132,17 +151,17 @@
     </div>
     
     <!-- Documents Content -->
-    <div v-else class="max-w-7xl mx-auto px-6 lg:px-4 md:px-4 sm:px-3">
+    <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
       <!-- Grid Layout -->
-      <div v-if="currentLayout === 'grid'" class="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:grid-cols-1 gap-6 md:gap-4">
+      <div v-if="currentLayout === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         <div 
           v-for="document in filteredDocuments" 
           :key="document.id"
           class="bg-white rounded-2xl border border-slate-200 overflow-hidden cursor-pointer transition-all duration-300 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:border-blue-500"
           :class="{ 'border-blue-500 bg-blue-50': selectedDocuments.includes(document.id) }"
         >
-          <div class="p-6 pb-4 lg:p-4 lg:pb-3 md:p-4 md:pb-3 flex justify-between items-start relative">
-            <div class="absolute top-4 left-4 lg:top-3 lg:left-3 md:top-3 md:left-3 z-10">
+          <div class="p-4 sm:p-6 pb-3 sm:pb-4 flex justify-between items-start relative">
+            <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
               <Checkbox
                 v-if="user"
                 :checked="selectedDocuments.includes(document.id)"
@@ -151,7 +170,7 @@
                 class="bg-white rounded shadow-sm"
               />
             </div>
-            <div class="w-12 h-12 lg:w-10 lg:h-10 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white text-xl lg:text-lg md:text-lg cursor-pointer" @click="openDocument(document.id)">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center text-white text-lg sm:text-xl cursor-pointer" @click="openDocument(document.id)">
               <Icon name="heroicons:document-text" />
             </div>
             <div class="mt-1">
@@ -174,12 +193,12 @@
             </div>
           </div>
           
-          <div class="px-6 pb-4 lg:px-4 lg:pb-3 md:px-4 md:pb-3">
-            <h3 class="m-0 mb-2 text-lg lg:text-base md:text-base font-semibold text-slate-800 leading-snug">{{ document.title }}</h3>
+          <div class="px-4 pb-3 sm:px-6 sm:pb-4">
+            <h3 class="m-0 mb-2 text-base sm:text-lg font-semibold text-slate-800 leading-snug">{{ document.title }}</h3>
             <p class="m-0 text-sm text-slate-500 leading-relaxed">{{ document.title }}</p>
           </div>
           
-          <div class="px-6 pb-6 pt-4 lg:px-4 lg:pb-4 lg:pt-3 md:px-4 md:pb-4 md:pt-3 border-t border-slate-100">
+          <div class="px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4 border-t border-slate-100">
             <div class="mb-4">
               <div class="flex items-center gap-2 mb-2">
                 <Avatar size="small">
@@ -245,10 +264,10 @@
         <div 
           v-for="document in filteredDocuments" 
           :key="document.id"
-          class="bg-white rounded-xl border border-slate-200 px-6 py-4 cursor-pointer transition-all duration-200 flex items-center gap-4 hover:border-blue-500 hover:shadow-md"
+          class="bg-white rounded-xl border border-slate-200 px-4 py-3 sm:px-6 sm:py-4 cursor-pointer transition-all duration-200 flex items-center gap-3 sm:gap-4 hover:border-blue-500 hover:shadow-md"
           :class="{ 'border-blue-500 bg-blue-50': selectedDocuments.includes(document.id) }"
         >
-          <div class="flex-shrink-0 mr-2">
+          <div class="flex-shrink-0">
             <Checkbox
               v-if="user"
               :checked="selectedDocuments.includes(document.id)"
@@ -256,55 +275,61 @@
               @click.stop
             />
           </div>
-          <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-base flex-shrink-0 cursor-pointer" @click="openDocument(document.id)">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-sm sm:text-base flex-shrink-0 cursor-pointer" @click="openDocument(document.id)">
             <Icon name="heroicons:document-text" />
           </div>
           
           <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-center mb-2 lg:flex-col lg:items-start lg:gap-2">
-              <h3 class="m-0 text-base lg:text-sm md:text-sm font-semibold text-slate-800 leading-snug">{{ document.title }}</h3>
-              <div>
+            <div class="flex justify-between items-center mb-1 sm:mb-2">
+              <h3 class="m-0 text-sm sm:text-base font-semibold text-slate-800 leading-snug truncate">{{ document.title }}</h3>
+              <div class="flex-shrink-0 ml-2">
                 <Badge 
                   v-if="document.is_published"
                   variant="default"
+                  class="text-xs"
                 >
                   <Icon name="heroicons:eye" class="w-3 h-3 mr-1" />
-                  Publicado
+                  <span class="hidden sm:inline">Publicado</span>
+                  <span class="sm:hidden">Pub</span>
                 </Badge>
                 <Badge 
                   v-else
                   variant="secondary"
+                  class="text-xs"
                 >
                   <Icon name="heroicons:lock-closed" class="w-3 h-3 mr-1" />
-                  Privado
+                  <span class="hidden sm:inline">Privado</span>
+                  <span class="sm:hidden">Priv</span>
                 </Badge>
               </div>
             </div>
             
-            <div class="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-2">
-              <div class="flex items-center gap-2 text-sm text-slate-600">
+            <div class="flex items-center gap-2 sm:gap-4">
+              <div class="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-slate-600">
                 <Avatar size="small">
-                  <AvatarFallback :style="{ backgroundColor: document.owner_color }">
+                  <AvatarFallback :style="{ backgroundColor: document.owner_color }" class="w-4 h-4 sm:w-5 sm:h-5 text-xs">
                     {{ document.owner_name.charAt(0) }}
                   </AvatarFallback>
                 </Avatar>
-                <span>{{ document.owner_name }}</span>
+                <span class="truncate">{{ document.owner_name }}</span>
               </div>
               
               <div class="flex items-center gap-1 text-xs text-slate-400">
                 <Icon name="heroicons:clock" class="w-3 h-3" />
-                <span>{{ formatDate(document.updated_at) }}</span>
+                <span class="hidden sm:inline">{{ formatDate(document.updated_at) }}</span>
+                <span class="sm:hidden">{{ new Date(document.updated_at).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }) }}</span>
               </div>
             </div>
           </div>
           
-          <div class="flex gap-2 flex-shrink-0">
+          <div class="flex gap-1 sm:gap-2 flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
               @click.stop="openDocument(document.id)"
+              class="w-8 h-8 sm:w-9 sm:h-9"
             >
-              <Icon name="heroicons:arrow-top-right-on-square" class="w-4 h-4" />
+              <Icon name="heroicons:arrow-top-right-on-square" class="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
             
             <Button
@@ -312,8 +337,9 @@
               variant="ghost"
               size="sm"
               @click.stop="editDocument(document)"
+              class="w-8 h-8 sm:w-9 sm:h-9"
             >
-              <Icon name="heroicons:pencil" class="w-4 h-4" />
+              <Icon name="heroicons:pencil" class="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
             
             <Button
@@ -321,8 +347,9 @@
               variant="ghost"
               size="sm"
               @click.stop="shareDocument(document.id)"
+              class="w-8 h-8 sm:w-9 sm:h-9"
             >
-              <Icon name="heroicons:share" class="w-4 h-4" />
+              <Icon name="heroicons:share" class="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
             
             <Button
@@ -330,8 +357,9 @@
               variant="ghost"
               size="sm"
               @click.stop="deleteDocument(document)"
+              class="w-8 h-8 sm:w-9 sm:h-9"
             >
-              <Icon name="heroicons:trash" class="w-4 h-4" />
+              <Icon name="heroicons:trash" class="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
         </div>
@@ -340,7 +368,7 @@
 
     <!-- Create Document Dialog -->
     <Dialog v-model:open="showCreateDialog">
-      <DialogContent class="sm:max-w-[425px]">
+      <DialogContent class="mx-4 sm:mx-0 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Crear Nuevo Documento</DialogTitle>
         </DialogHeader>
@@ -386,7 +414,7 @@
 
     <!-- Edit Document Dialog -->
     <Dialog v-model:open="showEditDialog">
-      <DialogContent class="sm:max-w-[425px]">
+      <DialogContent class="mx-4 sm:mx-0 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Documento</DialogTitle>
         </DialogHeader>
@@ -447,7 +475,7 @@
 
     <!-- Delete Confirmation Dialog -->
     <Dialog v-model:open="showDeleteConfirm">
-      <DialogContent class="sm:max-w-[400px]">
+      <DialogContent class="mx-4 sm:mx-0 sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Confirmar Eliminación</DialogTitle>
         </DialogHeader>
@@ -492,11 +520,22 @@
         </div>
       </DialogContent>
     </Dialog>
+
+    <!-- Floating Create Document Button -->
+    <Button
+      v-if="user"
+      @click="createDocument"
+      :disabled="creatingDocument"
+      class="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
+    >
+      <Icon name="heroicons:plus" class="w-full h-auto aspect-square" />
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { usePageTitleStore } from '~/stores/pageTitle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -516,6 +555,7 @@ interface Document {
 }
 
 const { user, logout, token } = useAuth()
+const pageTitleStore = usePageTitleStore()
 const router = useRouter()
 
 const documents = ref<Document[]>([])
@@ -615,6 +655,9 @@ const toggleDocumentSelection = (documentId: number) => {
 }
 
 onMounted(async () => {
+  // Set page title
+  pageTitleStore.setTitle('RealtimeDocs', user.value ? 'Mis Documentos' : 'Documentos Públicos')
+  
   await loadDocuments()
 })
 

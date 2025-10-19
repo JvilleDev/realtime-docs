@@ -22,14 +22,11 @@ export const useDebouncedBackendSync = () => {
     }
     
     // Set pending state immediately when changes are detected
-    console.log('🔄 Setting pending state with debounce delay:', debounceDelay)
     setPending(debounceDelay)
-    console.log('✅ Pending state set')
     
     // Set new timeout
     const timeout = setTimeout(async () => {
       try {
-        console.log(`💾 Debounced save for document ${documentId}`)
         setSaving()
         await saveToBackend(documentId, content, changeData)
         setSaved()
@@ -50,7 +47,6 @@ export const useDebouncedBackendSync = () => {
       timeout
     })
     
-    console.log(`⏰ Debounced save scheduled for document ${documentId} in ${debounceDelay}ms`)
   }
   
   const flushPendingUpdates = async () => {
@@ -62,7 +58,6 @@ export const useDebouncedBackendSync = () => {
       }
       
       try {
-        console.log(`🚀 Flushing pending update for document ${documentId}`)
         setSaving()
         await saveToBackend(documentId, update.content, update.changeData)
         setSaved()
@@ -80,7 +75,6 @@ export const useDebouncedBackendSync = () => {
       if (update?.timeout) {
         clearTimeout(update.timeout)
         pendingUpdates.value.delete(documentId)
-        console.log(`❌ Cancelled pending update for document ${documentId}`)
       }
     } else {
       // Cancel all pending updates
@@ -90,7 +84,6 @@ export const useDebouncedBackendSync = () => {
         }
       }
       pendingUpdates.value.clear()
-      console.log(`❌ Cancelled all pending updates`)
     }
   }
   

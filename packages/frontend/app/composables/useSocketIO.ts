@@ -8,16 +8,12 @@ export const useSocketIO = () => {
 
   const connect = () => {
     if (socket.value?.connected) {
-      console.log('🔌 Socket already connected')
       return
     }
 
     try {
       const config = useRuntimeConfig()
-      const socketUrl = config.public.backendUrl || 'http://localhost:3001'
-      
-      console.log('🔌 Connecting to Socket.IO server:', socketUrl)
-      
+      const socketUrl = config.public.backendUrl || 'http://localhost:3001'      
       socket.value = io(socketUrl, {
         path: '/socket.io/',
         transports: ['websocket', 'polling'],
@@ -29,13 +25,11 @@ export const useSocketIO = () => {
 
       // Connection events
       socket.value.on('connect', () => {
-        console.log('✅ Socket.IO connected:', socket.value?.id)
         isConnected.value = true
         peerId.value = socket.value?.id || null
       })
 
       socket.value.on('disconnect', (reason) => {
-        console.log('❌ Socket.IO disconnected:', reason)
         isConnected.value = false
         peerId.value = null
       })
@@ -52,7 +46,6 @@ export const useSocketIO = () => {
 
   const disconnect = () => {
     if (socket.value) {
-      console.log('🔌 Disconnecting Socket.IO')
       socket.value.disconnect()
       socket.value = null
       isConnected.value = false
@@ -62,11 +55,9 @@ export const useSocketIO = () => {
 
   const joinDocument = (documentId: string, userInfo?: any) => {
     if (!socket.value?.connected) {
-      console.warn('⚠️ Socket not connected, cannot join document')
       return
     }
 
-    console.log('📄 Joining document:', documentId)
     socket.value.emit('document:join', documentId)
   }
 
@@ -76,7 +67,6 @@ export const useSocketIO = () => {
       return
     }
 
-    console.log('📄 Leaving document:', documentId)
     socket.value.emit('document:leave', documentId)
   }
 
@@ -86,7 +76,6 @@ export const useSocketIO = () => {
       return
     }
 
-    console.log('📝 Updating document:', documentId)
     socket.value.emit('document:update', {
       documentId,
       content,
@@ -124,6 +113,15 @@ export const useSocketIO = () => {
     socket.value.emit('typing:stop', documentId)
   }
 
+  const sendPing = (documentId: string) => {
+    if (!socket.value?.connected) {
+      console.warn('⚠️ Socket not connected, cannot send ping')
+      return
+    }
+
+    socket.value.emit('presence:ping', documentId)
+  }
+
   // Cleanup on unmount
   onUnmounted(() => {
     disconnect()
@@ -140,6 +138,7 @@ export const useSocketIO = () => {
     updateDocument,
     moveCursor,
     startTyping,
-    stopTyping
+    stopTyping,
+    sendPing
   }
 }
